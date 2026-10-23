@@ -1,7 +1,10 @@
 package wireguard
 
 import (
+	"context"
 	"fmt"
+	"net"
+	"net/netip"
 	"os"
 	"sync"
 
@@ -12,10 +15,11 @@ import (
 
 // WgOutbound implements OutboundAdapter for WireGuard.
 type WgOutbound struct {
-	mu     sync.Mutex
+	mu     sync.RWMutex
 	dev    *device.Device
 	tunDev tun.Device
 	chTun  *ChannelTUN
+	stream *streamNet
 
 	running bool
 }
@@ -70,7 +74,7 @@ func (w *WgOutbound) Start() error {
 	fmt.Fprintln(os.Stderr, "[BlockAds/Go] WgOutbound: started")
 
 	go func() {
-		w.dev.Wait()
+		<-w.dev.Wait()
 		fmt.Fprintln(os.Stderr, "[BlockAds/Go] WgOutbound: device closed")
 		w.mu.Lock()
 		w.running = false
@@ -78,6 +82,90 @@ func (w *WgOutbound) Start() error {
 	}()
 
 	return nil
+}
+
+// NewStreamOutbound creates a WireGuard device attached to a private userspace
+// netstack. DialContext produces TCP/UDP connections that are encrypted by the
+// same WireGuard device; no packets reach the Android TUN directly.
+func NewStreamOutbound(localAddresses []netip.Addr, ipcConfig string, protectFn func(fd int) bool) (*WgOutbound, error) {
+	stream, err := newStreamNet(localAddresses, defaultMTU)
+	if err != nil {
+		return nil, err
+	}
+	adapter, err := NewWgOutbound(stream, ipcConfig, protectFn)
+	if err != nil {
+		stream.Close()
+		return nil, err
+	}
+	adapter.stream = stream
+	return adapter, nil
+}
+
+// DialContext dials an IP literal through the private WireGuard netstack.
+// Hostnames are intentionally rejected so upstream DNS cannot recursively use
+// the VPN being built.
+func (w *WgOutbound) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	if w.stream == nil || w.dev == nil || !w.running {
+		return nil, fmt.Errorf("wireguard stream transport is not running")
+	}
+
+	host, portText, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, err
+	}
+	addr, err := netip.ParseAddr(host)
+	if err != nil {
+		return nil, fmt.Errorf("wireguard stream dial requires an IP literal: %w", err)
+	}
+	port, err := net.LookupPort(network, portText)
+	if err != nil {
+		return nil, err
+	}
+	addrPort := netip.AddrPortFrom(addr.Unmap(), uint16(port))
+
+	switch network {
+	case "tcp", "tcp4", "tcp6":
+		if (network == "tcp4" && addr.Is6()) || (network == "tcp6" && addr.Is4()) {
+			return nil, fmt.Errorf("%s does not match address %s", network, addr)
+		}
+		return w.stream.dialTCP(ctx, addrPort)
+	case "udp", "udp4", "udp6":
+		if (network == "udp4" && addr.Is6()) || (network == "udp6" && addr.Is4()) {
+			return nil, fmt.Errorf("%s does not match address %s", network, addr)
+		}
+		return w.stream.dialUDP(addrPort)
+	default:
+		return nil, fmt.Errorf("unsupported wireguard stream network %q", network)
+	}
+}
+
+// Listen starts a TCP listener on the private WireGuard netstack. It is not
+// exported across gomobile and exists for engine-level tests and future local
+// stream services.
+func (w *WgOutbound) Listen(network, address string) (net.Listener, error) {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	if w.stream == nil || w.dev == nil || !w.running {
+		return nil, fmt.Errorf("wireguard stream transport is not running")
+	}
+	if network != "tcp" {
+		return nil, fmt.Errorf("unsupported wireguard listen network %q", network)
+	}
+	host, portText, err := net.SplitHostPort(address)
+	if err != nil {
+		return nil, err
+	}
+	addr, err := netip.ParseAddr(host)
+	if err != nil {
+		return nil, fmt.Errorf("wireguard stream listen requires an IP literal: %w", err)
+	}
+	port, err := net.LookupPort(network, portText)
+	if err != nil {
+		return nil, err
+	}
+	return w.stream.listenTCP(netip.AddrPortFrom(addr.Unmap(), uint16(port)))
 }
 
 // Stop shuts down the WireGuard device, including one whose Start failed.

@@ -340,8 +340,10 @@ type WgInterface = internal/wireguard.WgInterface
 	field WgInterface.H3 *int64
 	field WgInterface.H4 *int64
 type WgOutbound = internal/wireguard.WgOutbound
+	method WgOutbound.DialContext(ctx context.Context, network string, address string) (net.Conn, error)
 	method WgOutbound.HandlePacket(packet []byte, length int)
 	method WgOutbound.IsRunning() bool
+	method WgOutbound.Listen(network string, address string) (net.Listener, error)
 	method WgOutbound.Name() string
 	method WgOutbound.Start() error
 	method WgOutbound.Stop()
