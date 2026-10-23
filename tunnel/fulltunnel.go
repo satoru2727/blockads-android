@@ -2,6 +2,7 @@ package tunnel
 
 import (
 	"encoding/binary"
+	"errors"
 	"io"
 	"net"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
+	"github.com/nqmgaming/blockads-tunnel/internal/mitm"
 	"github.com/xjasonlyu/tun2socks/v2/core/adapter"
 )
 
@@ -331,13 +333,12 @@ func isStunPort(port int) bool {
 }
 
 func relayDirectFromFlow(clientConn net.Conn, flow flowID, engine *Engine, protectFn func(fd int) bool) {
-	if remote, used, err := engine.DialProxy(flow.serverIP, flow.serverPort); used {
-		if err != nil {
-			logf("[FullTunnel] proxy dial %s:%d failed: %v", flow.serverIP, flow.serverPort, err)
-			return
-		}
+	if remote, err := engine.DialUpstream(flow.serverIP, flow.serverPort); err == nil {
 		defer remote.Close()
 		bidiCopyFlow(clientConn, remote)
+		return
+	} else if !errors.Is(err, mitm.ErrNoOutbound) {
+		logf("[FullTunnel] proxy dial %s:%d failed: %v", flow.serverIP, flow.serverPort, err)
 		return
 	}
 
@@ -417,7 +418,7 @@ func (w *udpDNSResponseWriter) WriteMsg(m *dns.Msg) error {
 func (w *udpDNSResponseWriter) Write(b []byte) (int, error) { return w.conn.Write(b) }
 
 func (w *udpDNSResponseWriter) Close() error        { return nil }
-func (w *udpDNSResponseWriter) TsigStatus() error    { return nil }
+func (w *udpDNSResponseWriter) TsigStatus() error   { return nil }
 func (w *udpDNSResponseWriter) TsigTimersOnly(bool) {}
 func (w *udpDNSResponseWriter) Hijack()             {}
 
@@ -489,7 +490,6 @@ func (w *tcpDNSResponseWriter) Write(b []byte) (int, error) {
 }
 
 func (w *tcpDNSResponseWriter) Close() error        { return nil }
-func (w *tcpDNSResponseWriter) TsigStatus() error    { return nil }
+func (w *tcpDNSResponseWriter) TsigStatus() error   { return nil }
 func (w *tcpDNSResponseWriter) TsigTimersOnly(bool) {}
 func (w *tcpDNSResponseWriter) Hijack()             {}
-

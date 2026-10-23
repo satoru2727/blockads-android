@@ -5,6 +5,7 @@ import (
 	"compress/flate"
 	"compress/gzip"
 	"compress/zlib"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -127,10 +128,14 @@ type AdBlockChecker interface {
 	LookupIP(host string) (net.IP, error)
 	IsDoHBlockingEnabled() bool
 	LogConnection(flow FlowID, protocol int)
-	DialProxy(targetIP net.IP, targetPort int) (net.Conn, bool, error)
+	DialUpstream(targetIP net.IP, targetPort int) (net.Conn, error)
 }
 
 type adBlockChecker = AdBlockChecker
+
+// ErrNoOutbound tells dialUpstream that the checker has no tunnel/proxy
+// adapter and should fall back to the protected direct dialer.
+var ErrNoOutbound = errors.New("no upstream adapter")
 
 // requestAcceptsHTML returns true when the request's Accept header
 // explicitly includes text/html — i.e., the client is requesting an

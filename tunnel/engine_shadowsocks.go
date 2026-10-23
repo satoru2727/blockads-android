@@ -1,11 +1,13 @@
 package tunnel
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strconv"
 	"strings"
 
+	"github.com/nqmgaming/blockads-tunnel/internal/mitm"
 	"github.com/nqmgaming/blockads-tunnel/internal/proxy"
 	"github.com/nqmgaming/blockads-tunnel/internal/proxy/hysteria2"
 	"github.com/nqmgaming/blockads-tunnel/internal/proxy/masque"
@@ -200,22 +202,28 @@ func (e *Engine) isProxyServer(targetIP net.IP, targetPort int) bool {
 	return false
 }
 
-// DialProxy attempts to dial target via active proxy (Shadowsocks, Trojan, VLESS) if active.
-// Returns (conn, true, err) if proxy handled it, or (nil, false, nil) if no proxy is active.
-func (e *Engine) DialProxy(targetIP net.IP, targetPort int) (net.Conn, bool, error) {
+// DialUpstream attempts to dial target through WireGuard or an active proxy.
+// It returns ErrNoOutbound when neither is configured so MITM callers can
+// fall back to the protected direct dialer.
+func (e *Engine) DialUpstream(targetIP net.IP, targetPort int) (net.Conn, error) {
 	if e.isProxyServer(targetIP, targetPort) {
 		logf("[Engine] DialProxy: skipped dial to proxy server itself (%s:%d)", targetIP, targetPort)
-		return nil, false, nil
+		return nil, mitm.ErrNoOutbound
+	}
+	if adapter := e.GetRouter().GetAdapter(); adapter != nil {
+		if stream, ok := adapter.(interface {
+			DialContext(ctx context.Context, network, address string) (net.Conn, error)
+		}); ok {
+			return stream.DialContext(context.Background(), "tcp", net.JoinHostPort(targetIP.String(), strconv.Itoa(targetPort)))
+		}
 	}
 	if pc := e.proxyClient.Load(); pc != nil && *pc != nil {
 		conn, err := (*pc).DialTCP(targetIP, targetPort)
-		return conn, true, err
+		return conn, err
 	}
 	if ss := e.ssClient.Load(); ss != nil {
 		conn, err := ss.DialTCP(targetIP, targetPort)
-		return conn, true, err
+		return conn, err
 	}
-	return nil, false, nil
+	return nil, mitm.ErrNoOutbound
 }
-
-
