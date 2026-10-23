@@ -2,9 +2,30 @@
 
 ## Summary
 
-BlockAds currently makes WireGuard and full HTTPS filtering effectively exclusive: the Android layer chooses between the legacy WireGuard engine (`Start`) and the direct full-tunnel/MITM engine (`StartFull`). This branch keeps one Android VPN and adds a small userspace stream transport so MITM upstream TCP can traverse the already-configured WireGuard device.
+BlockAds previously made WireGuard and full HTTPS filtering effectively exclusive: the Android layer chose between the legacy WireGuard engine (`Start`) and the direct full-tunnel/MITM engine (`StartFull`). This branch keeps one Android VPN, moves the configured WireGuard device onto a private gVisor netstack, and sends MITM upstream TCP through that stream transport.
 
 The feature remains behind a default-off experimental setting. It does not alter CA trust, disable TLS verification, or change the existing direct/WireGuard behavior when the setting is disabled.
+
+The result is a deliberately narrow Phase A increment: eligible HTTPS upstream TCP can use WireGuard while DNS and existing packet handlers remain in BlockAds. General non-DNS UDP forwarding, ICMP, full route-level forwarding, and real-device behavior are follow-up work.
+
+## Branch state
+
+Base: `bdc9127fa598494b4370cfd4066de43370bfe8e8`
+
+Commits (oldest first):
+
+| Commit | Subject | PR candidate |
+|---|---|---|
+| `2491045` | `feat: add wireguard userspace stream transport` | PR 1 |
+| `f728652` | `refactor: route mitm upstreams through engine dialer` | PR 2 |
+| `9a9ddd5` | `feat: enable wireguard https coexistence` | PR 3 |
+| `2fa5297` | `fix: advertise wireguard stream support` | PR 1 |
+| `d717495` | `feat: gate wireguard https coexistence` | PR 3 |
+| `0355fd7` | `docs: document wireguard https integration` | Documentation |
+| `c836221` | `test: cover wireguard udp stream dial` | PR 1 |
+| `08cde0d` | `docs: clarify wireguard udp test scope` | Documentation |
+
+The branch intentionally contains eight Phase A commits, not the seven estimated during planning. Documentation-only commits can be retained locally, rebased into their implementation commits, or submitted separately according to maintainer preference.
 
 ## Maintainer discussion draft
 
@@ -29,12 +50,15 @@ Purpose:
 - Add a virtual gVisor netstack and `DialContext` for TCP/UDP IP-literal flows.
 - Keep it internal to the tunnel module; expose no new gomobile type.
 - Verify stream support and loopback TCP/UDP plumbing.
+- Configure the WireGuard device on its private virtual TUN instead of Android TUN.
 
 Review focus:
 
 - Deadlock/lifecycle behavior around WireGuard's virtual TUN.
 - Address-family handling and hostname rejection.
 - Whether this should remain AmneziaWG-specific or be generalized.
+
+Commits: `2491045`, `2fa5297`, `c836221`.
 
 ### 2. Route MITM upstreams through the engine
 
@@ -43,12 +67,15 @@ Purpose:
 - Introduce a narrow upstream dial seam and `ErrNoOutbound`.
 - Prefer an active stream adapter, then existing proxy clients.
 - Fall back to a protected direct dial only when no outbound is configured.
+- Preserve fail-closed behavior for real stream errors.
 
 Review focus:
 
 - Fail-closed semantics for real stream errors.
 - Proxy-server loop prevention.
 - IPv4/IPv6 fallback compatibility.
+
+Commit: `f728652`.
 
 ### 3. Add default-off Android coexistence gating
 
@@ -58,12 +85,15 @@ Purpose:
 - Pass it through VPN startup.
 - Preserve legacy WireGuard behavior when false.
 - Select `Start` plus MITM/TCP stack when true.
+- Keep the setting visible as experimental and reversible.
 
 Review focus:
 
 - Preference naming and UI copy.
 - Restart behavior when the setting changes.
 - Compatibility with proxy and Shadowsocks routing modes.
+
+Commits: `9a9ddd5`, `d717495`.
 
 ### 4. Generalize UDP/IP forwarding
 
@@ -72,6 +102,7 @@ Purpose:
 - Add a flow-level outbound interface for arbitrary UDP.
 - Preserve idle timeout and addressing semantics.
 - Route only explicitly selected remote-egress modes; avoid direct fallback.
+- Define IPv4/IPv6 and fragmentation behavior before exposing a setting.
 
 Review focus:
 
@@ -83,7 +114,7 @@ Review focus:
 
 Purpose:
 
-- Evaluate `tsnet` versus lower-level `wgengine` and a sing-box dependency.
+- Evaluate `tsnet` versus lower-level `wgengine` and a sing-box dependency using `docs/tailscale-comparison.md`.
 - Start with one authenticated Tailnet TCP dial behind an isolated experimental flag.
 - Document binary-size, state-storage, licensing, and maintenance costs.
 
@@ -100,10 +131,13 @@ Review focus:
 ## Known limitations to state in the PR
 
 - Real-peer and on-device validation is not complete.
+- General non-DNS TCP is not yet routed through the WireGuard stream adapter.
 - General non-DNS UDP is not yet routed through the WireGuard stream adapter.
+- The private adapter has connected-UDP dial plumbing, but no full-stack UDP handler integration or idle-timeout design yet.
 - IPv6, MTU/fragmentation, roaming, always-on VPN, lockdown, battery, and memory need device measurements.
 - Browser certificate-pinning compatibility is unchanged but not yet device-tested in this mode.
 - The feature is intentionally experimental and default-off.
+- No Tailscale dependency or PoC is included; Phase B is a comparison only.
 
 ## Security review checklist
 
@@ -123,10 +157,10 @@ From `tunnel/`:
 ```sh
 mise exec go -- go build ./...
 mise exec go -- go vet ./...
-mise exec go -- go test ./...
+mise exec go -- go test -count=1 ./...
 ```
 
-Environment note: `internal/dns.TestDoTErrors` and `TestDoQErrors` may fail where wildcard DNS answers are returned for intentionally unresolvable names. Compare failures with the base commit; upstream CI should remain authoritative.
+Environment note: `tunnel/internal/dns.TestDoTErrors` and `tunnel/internal/dns.TestDoQErrors` fail in this workspace because the environment resolves intentionally unresolvable names through wildcard/private DNS. The errors match the pre-change baseline. Upstream CI remains authoritative.
 
 Android verification still requires:
 
