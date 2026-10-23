@@ -62,7 +62,7 @@ type Engine struct
 	method Engine.AppendRemoteFilterRules(tag string, content string) (int, error)
 	method Engine.ClearQuanXConfig()
 	method Engine.ClearRulesetConfig()
-	method Engine.DialProxy(targetIP net.IP, targetPort int) (net.Conn, bool, error)
+	method Engine.DialUpstream(targetIP net.IP, targetPort int) (net.Conn, error)
 	method Engine.GetActiveProxyProtocol() string
 	method Engine.GetActiveProxyServerAddress() string
 	method Engine.GetGeoIPCountry(ipStr string) string

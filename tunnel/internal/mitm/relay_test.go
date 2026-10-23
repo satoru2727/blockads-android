@@ -38,7 +38,9 @@ func (b *fakeBlocker) LookupIP(string) (net.IP, error) {
 
 func (b *fakeBlocker) IsDoHBlockingEnabled() bool { return b.doh }
 
-func (b *fakeBlocker) DialProxy(net.IP, int) (net.Conn, bool, error) { return nil, false, nil }
+func (b *fakeBlocker) DialUpstream(net.IP, int) (net.Conn, error) {
+	return nil, ErrNoOutbound
+}
 
 func (b *fakeBlocker) LogConnection(FlowID, int) {
 	b.mu.Lock()

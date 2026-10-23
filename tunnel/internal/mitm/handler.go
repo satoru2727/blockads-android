@@ -3,6 +3,7 @@ package mitm
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"io"
 	"net"
 	"strings"
@@ -376,12 +377,13 @@ func parseHTTPHost(b []byte) string {
 // dialUpstream dials the flow's destination with socket protection.
 func dialUpstream(flow flowID, hostname string, blocker adBlockChecker, protectFn func(fd int) bool) (net.Conn, error) {
 	if blocker != nil {
-		if proxyConn, used, err := blocker.DialProxy(flow.serverIP, int(flow.serverPort)); used {
-			if err != nil {
-				logf("[TcpStack] proxy dial to %s:%d failed: %v", flow.serverIP, flow.serverPort, err)
-				return nil, err
-			}
+		proxyConn, err := blocker.DialUpstream(flow.serverIP, int(flow.serverPort))
+		if err == nil {
 			return proxyConn, nil
+		}
+		if !errors.Is(err, ErrNoOutbound) {
+			logf("[TcpStack] upstream dial to %s:%d failed: %v", flow.serverIP, flow.serverPort, err)
+			return nil, err
 		}
 	}
 
