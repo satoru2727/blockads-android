@@ -57,6 +57,28 @@ func TestStreamOutboundDialsListener(t *testing.T) {
 	}
 }
 
+func TestStreamOutboundSupportsUDPDial(t *testing.T) {
+	local := netip.MustParseAddr("10.64.0.2")
+	remote := netip.MustParseAddrPort("10.64.0.3:53")
+	outbound, err := NewStreamOutbound([]netip.Addr{local}, testIpc(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(outbound.Stop)
+	if err := outbound.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	conn, err := outbound.DialContext(context.Background(), "udp", remote.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	if conn.RemoteAddr().Network() != "udp" || conn.RemoteAddr().String() != remote.String() {
+		t.Fatalf("UDP remote = %v, want %v", conn.RemoteAddr(), remote)
+	}
+}
+
 func TestStreamOutboundRejectsHostnameBeforeStart(t *testing.T) {
 	outbound, err := NewStreamOutbound(nil, testIpc(), nil)
 	if err != nil {
