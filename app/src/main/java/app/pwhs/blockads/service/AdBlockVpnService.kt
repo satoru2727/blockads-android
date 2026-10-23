@@ -368,11 +368,13 @@ class AdBlockVpnService : VpnService() {
             vpnInterface: ParcelFileDescriptor,
             resolvedWgConfigJson: String,
             httpsFilteringEnabled: Boolean,
+            wireguardHttpsCoexistence: Boolean,
         ) = engineCoordinator.startTunnel(
             goTunnelAdapter = goTunnelAdapter,
             vpnInterface = vpnInterface,
             resolvedWgConfigJson = resolvedWgConfigJson,
             httpsFilteringEnabled = httpsFilteringEnabled,
+            wireguardHttpsCoexistence = wireguardHttpsCoexistence,
             certDir = filesDir.absolutePath,
             socketProtector = { fd ->
                 try {

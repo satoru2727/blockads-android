@@ -36,6 +36,7 @@ class VpnEngineCoordinatorTest {
     private var firewallEnabled = false
     private var routingMode = AppPreferences.ROUTING_MODE_DIRECT
     private var savedWgJson: String? = null
+    private var wireguardHttpsCoexistence = false
     private val prefs: AppPreferences = mockk {
         every { upstreamDns } returns flowOf("1.1.1.1")
         every { fallbackDns } returns flowOf("9.9.9.9")
@@ -52,6 +53,7 @@ class VpnEngineCoordinatorTest {
         every { getSelectedBrowsersSnapshot() } returns setOf("com.android.chrome")
         coEvery { getWhitelistedAppsSnapshot() } returns setOf("com.bank")
         coEvery { getRoutingModeSnapshot() } answers { this@VpnEngineCoordinatorTest.routingMode }
+        coEvery { getWireguardHttpsCoexistenceSnapshot() } answers { wireguardHttpsCoexistence }
         coEvery { getWgConfigJsonSnapshot() } answers { savedWgJson }
         coEvery { getFilterHttp3Snapshot() } returns false
         coEvery { getBlockDohBypassSnapshot() } returns true
@@ -139,18 +141,71 @@ class VpnEngineCoordinatorTest {
     fun `wireguard mode passes the resolved config, falling back to the saved one`() = runTest {
         routingMode = AppPreferences.ROUTING_MODE_WIREGUARD
         savedWgJson = "{\"saved\":1}"
-        coordinator.startTunnel(adapter, tun, "{\"resolved\":1}", httpsFilteringEnabled = false, certDir = "/c") { true }
-        verify { adapter.start(tun, "{\"resolved\":1}", false, setOf("com.android.chrome"), "/c", false, true, any(), any()) }
+        coordinator.startTunnel(
+            adapter,
+            tun,
+            "{\"resolved\":1}",
+            httpsFilteringEnabled = false,
+            wireguardHttpsCoexistence = false,
+            certDir = "/c"
+        ) { true }
+        verify {
+            adapter.start(tun, "{\"resolved\":1}", false, false, setOf("com.android.chrome"), "/c", false, true, any(), any())
+        }
 
-        coordinator.startTunnel(adapter, tun, "", httpsFilteringEnabled = false, certDir = "/c") { true }
-        verify { adapter.start(tun, "{\"saved\":1}", false, any(), any(), any(), any(), any(), any()) }
+        coordinator.startTunnel(
+            adapter,
+            tun,
+            "",
+            httpsFilteringEnabled = false,
+            wireguardHttpsCoexistence = false,
+            certDir = "/c"
+        ) { true }
+        verify { adapter.start(tun, "{\"saved\":1}", false, false, any(), "/c", any(), any(), any(), any()) }
     }
 
     @Test
     fun `direct mode ignores any WireGuard config and https forces HTTP3 filtering`() = runTest {
         savedWgJson = "{\"saved\":1}"
-        coordinator.startTunnel(adapter, tun, "{\"resolved\":1}", httpsFilteringEnabled = true, certDir = "/c") { true }
-        verify { adapter.start(tun, "", true, any(), "/c", true, true, any(), any()) }
+        coordinator.startTunnel(
+            adapter,
+            tun,
+            "",
+            httpsFilteringEnabled = true,
+            wireguardHttpsCoexistence = false,
+            certDir = "/c"
+        ) { true }
+        verify { adapter.start(tun, "", true, false, any(), "/c", true, true, any(), any()) }
+    }
+
+    @Test
+    fun `wireguard https coexistence is opt-in`() = runTest {
+        routingMode = AppPreferences.ROUTING_MODE_WIREGUARD
+        savedWgJson = "{\"wg\":1}"
+        coordinator.startTunnel(
+            adapter,
+            tun,
+            "",
+            true,
+            wireguardHttpsCoexistence = false,
+            certDir = "/c"
+        ) { true }
+        verify {
+            adapter.start(tun, "{\"wg\":1}", true, false, any(), "/c", any(), any(), any(), any())
+        }
+
+        wireguardHttpsCoexistence = true
+        coordinator.startTunnel(
+            adapter,
+            tun,
+            "",
+            true,
+            wireguardHttpsCoexistence = true,
+            certDir = "/c"
+        ) { true }
+        verify {
+            adapter.start(tun, "{\"wg\":1}", true, true, any(), "/c", any(), any(), any(), any())
+        }
     }
 
     @Ignore("WireGuard mode with no usable config starts the direct full-tunnel engine instead of failing closed")
@@ -158,8 +213,10 @@ class VpnEngineCoordinatorTest {
     fun `wireguard mode without a config does not start in direct mode`() = runTest {
         routingMode = AppPreferences.ROUTING_MODE_WIREGUARD
         savedWgJson = null
-        runCatching { coordinator.startTunnel(adapter, tun, "", httpsFilteringEnabled = false, certDir = "") { true } }
-        verify(exactly = 0) { adapter.start(any(), "", any(), any(), any(), any(), any(), any()) }
+        runCatching {
+            coordinator.startTunnel(adapter, tun, "", httpsFilteringEnabled = false, wireguardHttpsCoexistence = false, certDir = "") { true }
+        }
+        verify(exactly = 0) { adapter.start(any(), "", any(), any(), any(), any(), any(), any(), any()) }
     }
 
     @Test

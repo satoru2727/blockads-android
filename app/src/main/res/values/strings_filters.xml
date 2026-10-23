@@ -108,6 +108,8 @@
     <string name="https_filtering_browser_desc">Select browsers to apply cosmetic ad filtering. Only selected apps are filtered.</string>
     <string name="https_filtering_http3_title">Filter HTTP/3 (QUIC)</string>
     <string name="https_filtering_http3_desc">Block browser QUIC to force filterable connections for maximum ad filtering. May cause some pages to load partially. Turn off if pages don\'t load fully.</string>
+    <string name="https_filtering_wireguard_coexistence_title">Experimental: WireGuard coexistence</string>
+    <string name="https_filtering_wireguard_coexistence_desc">Keep WireGuard active while HTTPS filtering is enabled. This feature is still being validated and is off by default.</string>
     <string name="https_filtering_settings_desc">Hide ads visually in browsers</string>
     <string name="https_filtering_step1_title">Step 1: Save Certificate</string>
     <string name="https_filtering_step1_desc">Download the Root CA certificate to your device</string>

@@ -69,6 +69,7 @@ fun HttpsFilteringScreen(
     val certExported by viewModel.certExported.collectAsStateWithLifecycle()
     val certStatus by viewModel.certStatus.collectAsStateWithLifecycle()
     val filterHttp3 by viewModel.filterHttp3.collectAsStateWithLifecycle()
+    val wireguardHttpsCoexistence by viewModel.wireguardHttpsCoexistence.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
@@ -285,6 +286,44 @@ fun HttpsFilteringScreen(
                                     onCheckedChange = { viewModel.toggleFilterHttp3(it) }
                                 )
                             }
+                        }
+                    }
+                }
+
+                // ── Experimental WireGuard coexistence ───────────────
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.https_filtering_wireguard_coexistence_title),
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = stringResource(R.string.https_filtering_wireguard_coexistence_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Switch(
+                                checked = wireguardHttpsCoexistence,
+                                onCheckedChange = {
+                                    viewModel.toggleWireguardHttpsCoexistence(it)
+                                }
+                            )
                         }
                     }
                 }

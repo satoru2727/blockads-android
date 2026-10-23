@@ -29,9 +29,6 @@ import org.koin.core.component.inject
 import timber.log.Timber
 import java.io.File
 
-// Models, CertStatus, and HttpsFilteringEvent are in HttpsFilteringContract.kt
-// ── ViewModel ───────────────────────────────────────────────────────────────
-
 class HttpsFilteringViewModel(
     application: Application
 ) : AndroidViewModel(application), KoinComponent {
@@ -39,19 +36,18 @@ class HttpsFilteringViewModel(
     private val appPrefs: AppPreferences by inject()
     private val engine = tunnel.Tunnel.newEngine()
 
-    // ── UI State ─────────────────────────────────────────────────────────
-
     private val _isEnabled = MutableStateFlow(false)
     val isEnabled: StateFlow<Boolean> = _isEnabled.asStateFlow()
 
     private val _isProxyRunning = MutableStateFlow(false)
     val isProxyRunning: StateFlow<Boolean> = _isProxyRunning.asStateFlow()
 
-    /** HTTP/3 (QUIC) filtering. Off = pages load fully (QUIC relayed);
-     *  On = drop browser QUIC to force filterable TCP (more filtering,
-     *  some sites may load partially). */
     private val _filterHttp3 = MutableStateFlow(true)
     val filterHttp3: StateFlow<Boolean> = _filterHttp3.asStateFlow()
+
+    private val _wireguardHttpsCoexistence = MutableStateFlow(false)
+    val wireguardHttpsCoexistence: StateFlow<Boolean> =
+        _wireguardHttpsCoexistence.asStateFlow()
 
     private val _browsers = MutableStateFlow<List<BrowserInfo>>(emptyList())
     val browsers: StateFlow<List<BrowserInfo>> = _browsers.asStateFlow()
@@ -77,8 +73,6 @@ class HttpsFilteringViewModel(
         loadState()
     }
 
-    // ── Public API ───────────────────────────────────────────────────────
-
     /** Toggle HTTPS filtering on or off. */
     fun toggleEnabled(enabled: Boolean) {
         viewModelScope.launch {
@@ -103,16 +97,21 @@ class HttpsFilteringViewModel(
         }
     }
 
-    /**
-     * Toggle HTTP/3 (QUIC) filtering. Off (default) → QUIC is relayed so
-     * pages load fully. On → browser QUIC is dropped to force filterable
-     * TCP TLS (max in-page filtering). Restarts the VPN so the running
-     * engine picks up the new setting.
-     */
     fun toggleFilterHttp3(enabled: Boolean) {
         viewModelScope.launch {
             _filterHttp3.value = enabled
             appPrefs.setFilterHttp3(enabled)
+            if (_isEnabled.value) {
+                ServiceController.requestRestart(getApplication())
+            }
+        }
+    }
+
+    /** Toggle experimental WireGuard + HTTPS coexistence. */
+    fun toggleWireguardHttpsCoexistence(enabled: Boolean) {
+        viewModelScope.launch {
+            _wireguardHttpsCoexistence.value = enabled
+            appPrefs.setWireguardHttpsCoexistence(enabled)
             if (_isEnabled.value) {
                 ServiceController.requestRestart(getApplication())
             }
@@ -354,8 +353,6 @@ class HttpsFilteringViewModel(
         }
     }
 
-    // ── Internal ─────────────────────────────────────────────────────────
-
     private fun loadState() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -364,6 +361,7 @@ class HttpsFilteringViewModel(
             val enabled = appPrefs.getHttpsFilteringEnabledSnapshot()
             _isEnabled.value = enabled
             _filterHttp3.value = appPrefs.getFilterHttp3Snapshot()
+            _wireguardHttpsCoexistence.value = appPrefs.getWireguardHttpsCoexistenceSnapshot()
 
             // Load installed browsers
             val detectedBrowsers = withContext(Dispatchers.IO) { detectBrowsers() }
