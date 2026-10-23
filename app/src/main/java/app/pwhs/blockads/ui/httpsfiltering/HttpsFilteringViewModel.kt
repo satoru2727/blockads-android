@@ -86,11 +86,10 @@ class HttpsFilteringViewModel(
             appPrefs.setHttpsFilteringEnabled(enabled)
 
             if (enabled) {
-                // HTTPS filtering and WireGuard routing are mutually
-                // exclusive: TcpIpStack terminates flows and dials the
-                // destination directly, bypassing the WG tunnel. Turn
-                // WG off so the user gets a single, working mode.
-                if (appPrefs.getRoutingModeSnapshot() == AppPreferences.ROUTING_MODE_WIREGUARD) {
+                val coexistenceEnabled = appPrefs.getWireguardHttpsCoexistenceSnapshot()
+                if (!coexistenceEnabled &&
+                    appPrefs.getRoutingModeSnapshot() == AppPreferences.ROUTING_MODE_WIREGUARD
+                ) {
                     appPrefs.setRoutingMode(AppPreferences.ROUTING_MODE_DIRECT)
                     _events.emit(HttpsFilteringEvent.WireGuardDisabledForHttps)
                 }

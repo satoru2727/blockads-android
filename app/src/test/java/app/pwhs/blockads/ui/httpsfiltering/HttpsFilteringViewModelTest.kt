@@ -167,6 +167,25 @@ class HttpsFilteringViewModelTest {
     }
 
     @Test
+    fun `enabling with experimental coexistence keeps WireGuard routing`() {
+        val f = HttpsTestFixtures(
+            routingMode = AppPreferences.ROUTING_MODE_WIREGUARD,
+            wireguardHttpsCoexistence = true,
+        )
+        every { f.engine.startStackMitm(any()) } returns TEST_PEM
+        val vm = HttpsFilteringViewModel(f.app)
+        vm.awaitLoaded()
+        val events = vm.recordEvents()
+
+        vm.toggleEnabled(true)
+        awaitTrue { HttpsFilteringEvent.ProxyStarted in events }
+
+        assertFalse(HttpsFilteringEvent.WireGuardDisabledForHttps in events)
+        coVerify(exactly = 0) { f.prefs.setRoutingMode(any()) }
+        assertTrue(vm.isProxyRunning.value)
+    }
+
+    @Test
     fun `enabling reports an error when the engine returns no CA`() {
         val f = HttpsTestFixtures()
         val vm = HttpsFilteringViewModel(f.app)

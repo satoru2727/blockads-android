@@ -26,6 +26,7 @@ class HttpsTestFixtures(
     httpsEnabled: Boolean = false,
     filterHttp3: Boolean = true,
     routingMode: String = AppPreferences.ROUTING_MODE_DIRECT,
+    wireguardHttpsCoexistence: Boolean = false,
     selectedBrowsers: Set<String> = emptySet(),
 ) {
     val app: Application = ApplicationProvider.getApplicationContext()
@@ -41,6 +42,7 @@ class HttpsTestFixtures(
         coEvery { prefs.getHttpsFilteringEnabledSnapshot() } returns httpsEnabled
         coEvery { prefs.getFilterHttp3Snapshot() } returns filterHttp3
         coEvery { prefs.getRoutingModeSnapshot() } returns routingMode
+        coEvery { prefs.getWireguardHttpsCoexistenceSnapshot() } returns wireguardHttpsCoexistence
         every { prefs.getSelectedBrowsersSnapshot() } answers { savedBrowsers }
         coEvery { prefs.setSelectedBrowsers(any()) } answers { savedBrowsers = firstArg() }
         startKoin { modules(module { single { prefs } }) }

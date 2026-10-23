@@ -251,6 +251,21 @@ class WireGuardImportViewModelTest {
     }
 
     @Test
+    fun `turning WireGuard on preserves HTTPS filtering when coexistence is enabled`() = runTest {
+        val fake = FakeWireGuardPrefs(listOf(wgProfile("a"))).apply {
+            httpsFiltering.value = true
+            wireguardHttpsCoexistence.value = true
+        }
+        val vm = newVm(fake)
+        vm.events.test {
+            vm.toggleWireGuard()
+            assertEquals(WireGuardUiEvent.WireGuardToggled(true), awaitItem())
+        }
+        assertTrue(fake.httpsFiltering.value)
+        assertEquals(AppPreferences.ROUTING_MODE_WIREGUARD, fake.routingMode.value)
+    }
+
+    @Test
     fun `turning WireGuard off returns to direct routing`() = runTest {
         val vm = newVm(FakeWireGuardPrefs(listOf(wgProfile("a"))).apply {
             routingMode.value = AppPreferences.ROUTING_MODE_WIREGUARD

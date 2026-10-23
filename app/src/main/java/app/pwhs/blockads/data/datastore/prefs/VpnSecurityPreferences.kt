@@ -29,6 +29,8 @@ class VpnSecurityPreferences(private val dataStore: DataStore<Preferences>) {
         val KEY_RECORD_DNS_LOGS = booleanPreferencesKey("record_dns_logs")
         val KEY_FIREWALL_ENABLED = booleanPreferencesKey("firewall_enabled")
         val KEY_HTTPS_FILTERING_ENABLED = booleanPreferencesKey("https_filtering_enabled")
+        val KEY_WIREGUARD_HTTPS_COEXISTENCE =
+            booleanPreferencesKey("wireguard_https_coexistence_experimental")
         val KEY_FILTER_HTTP3 = booleanPreferencesKey("filter_http3")
         val KEY_SELECTED_BROWSERS = stringSetPreferencesKey("selected_browsers")
         val KEY_CRASH_REPORTING_ENABLED = booleanPreferencesKey("crash_reporting_enabled")
@@ -124,6 +126,10 @@ class VpnSecurityPreferences(private val dataStore: DataStore<Preferences>) {
 
     val httpsFilteringEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[KEY_HTTPS_FILTERING_ENABLED] ?: false
+    }
+
+    val wireguardHttpsCoexistence: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[KEY_WIREGUARD_HTTPS_COEXISTENCE] ?: false
     }
 
     val filterHttp3: Flow<Boolean> = dataStore.data.map { prefs ->
@@ -222,6 +228,13 @@ class VpnSecurityPreferences(private val dataStore: DataStore<Preferences>) {
 
     suspend fun getHttpsFilteringEnabledSnapshot(): Boolean =
         dataStore.data.first()[KEY_HTTPS_FILTERING_ENABLED] ?: false
+
+    suspend fun setWireguardHttpsCoexistence(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_WIREGUARD_HTTPS_COEXISTENCE] = enabled }
+    }
+
+    suspend fun getWireguardHttpsCoexistenceSnapshot(): Boolean =
+        dataStore.data.first()[KEY_WIREGUARD_HTTPS_COEXISTENCE] ?: false
 
     suspend fun setFilterHttp3(enabled: Boolean) {
         dataStore.edit { prefs -> prefs[KEY_FILTER_HTTP3] = enabled }
