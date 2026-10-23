@@ -28,6 +28,7 @@ class FakeWireGuardPrefs(profiles: List<WireGuardProfile> = emptyList(), activeI
     val activeId = MutableStateFlow(activeId)
     val routingMode = MutableStateFlow(AppPreferences.ROUTING_MODE_DIRECT)
     val httpsFiltering = MutableStateFlow(false)
+    val wireguardHttpsCoexistence = MutableStateFlow(false)
 
     private fun active() = profiles.value.let { list -> list.firstOrNull { it.id == activeId.value } ?: list.firstOrNull() }
 
@@ -41,6 +42,7 @@ class FakeWireGuardPrefs(profiles: List<WireGuardProfile> = emptyList(), activeI
         coEvery { setRoutingMode(any()) } coAnswers { this@FakeWireGuardPrefs.routingMode.value = firstArg() }
         coEvery { getHttpsFilteringEnabledSnapshot() } answers { this@FakeWireGuardPrefs.httpsFiltering.value }
         coEvery { setHttpsFilteringEnabled(any()) } coAnswers { this@FakeWireGuardPrefs.httpsFiltering.value = firstArg() }
+        coEvery { getWireguardHttpsCoexistenceSnapshot() } answers { this@FakeWireGuardPrefs.wireguardHttpsCoexistence.value }
         coEvery { getWgProfilesSnapshot() } answers { this@FakeWireGuardPrefs.profiles.value }
         coEvery { getActiveWgProfileSnapshot() } answers { active() }
         coEvery { addOrUpdateWgProfile(any(), any()) } coAnswers {

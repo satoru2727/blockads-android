@@ -199,11 +199,9 @@ class WireGuardImportViewModel(
                     _error.value = fixFirstMessage(active, issue)
                     return@launch
                 }
-                // HTTPS filtering and WireGuard routing are mutually
-                // exclusive: TcpIpStack terminates flows and dials the
-                // destination directly, bypassing the WG tunnel. Turn
-                // HTTPS filtering off so WG actually carries traffic.
-                if (appPrefs.getHttpsFilteringEnabledSnapshot()) {
+                if (appPrefs.getHttpsFilteringEnabledSnapshot() &&
+                    !appPrefs.getWireguardHttpsCoexistenceSnapshot()
+                ) {
                     appPrefs.setHttpsFilteringEnabled(false)
                     _events.emit(WireGuardUiEvent.HttpsFilteringDisabledForWg)
                 }

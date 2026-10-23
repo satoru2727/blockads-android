@@ -3,8 +3,11 @@ package tunnel
 import (
 	"encoding/json"
 	"fmt"
+	"net/netip"
 	"os"
 	"syscall"
+
+	"github.com/nqmgaming/blockads-tunnel/internal/wireguard"
 )
 
 // Start initializes the engine, configures adapters, and begins reading TUN packets.
@@ -63,7 +66,7 @@ func (e *Engine) Start(fd int, protector SocketProtector, wgConfigJSON string) {
 
 	if wgConfigJSON != "" {
 		logf("WireGuard config provided, initializing...")
-		if err := e.startWireGuard(tunFile, wgConfigJSON); err != nil {
+		if err := e.startWireGuard(tunFile, wgConfigJSON, e.useTcpStack.Load()); err != nil {
 			// Fail closed: with no adapter every non-DNS packet is dropped, so
 			// carrying on would report a running engine over a dead tunnel.
 			logf("WireGuard init failed, stopping engine: %v", err)
@@ -88,9 +91,10 @@ func (e *Engine) Start(fd int, protector SocketProtector, wgConfigJSON string) {
 	logf("Engine stopped")
 }
 
-// startWireGuard parses the config and brings up the WireGuard adapter on
-// tunFile.
-func (e *Engine) startWireGuard(tunFile *os.File, wgConfigJSON string) error {
+// startWireGuard parses the config and brings up the active WireGuard
+// transport. Stream mode is used when the TUN flows through the userspace
+// stack; otherwise packets are injected directly into WireGuard.
+func (e *Engine) startWireGuard(tunFile *os.File, wgConfigJSON string, streamMode bool) error {
 	wgCfg, err := ParseWgConfigJSON(wgConfigJSON)
 	if err != nil {
 		return fmt.Errorf("config parse: %w", err)
@@ -99,7 +103,20 @@ func (e *Engine) startWireGuard(tunFile *os.File, wgConfigJSON string) error {
 	if err != nil {
 		return fmt.Errorf("IPC config build: %w", err)
 	}
-	wgAdapter, err := NewWgOutbound(newChannelTUN(tunFile), ipcConfig, e.protectFn)
+	var wgAdapter *wireguard.WgOutbound
+	if streamMode {
+		addresses := make([]netip.Addr, 0, len(wgCfg.Interface.Address))
+		for _, address := range wgCfg.Interface.Address {
+			prefix, err := netip.ParsePrefix(address)
+			if err != nil {
+				return fmt.Errorf("interface address parse: %w", err)
+			}
+			addresses = append(addresses, prefix.Addr().Unmap())
+		}
+		wgAdapter, err = wireguard.NewStreamOutbound(addresses, ipcConfig, e.protectFn)
+	} else {
+		wgAdapter, err = wireguard.NewWgOutbound(wireguard.NewChannelTUN(tunFile), ipcConfig, e.protectFn)
+	}
 	if err != nil {
 		return fmt.Errorf("adapter create: %w", err)
 	}

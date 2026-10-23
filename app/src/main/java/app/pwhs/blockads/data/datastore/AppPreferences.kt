@@ -199,6 +199,8 @@ class AppPreferences internal constructor(
     suspend fun setFirewallEnabled(enabled: Boolean) = vpnSecurity.setFirewallEnabled(enabled)
     suspend fun setHttpsFilteringEnabled(enabled: Boolean) = vpnSecurity.setHttpsFilteringEnabled(enabled)
     suspend fun getHttpsFilteringEnabledSnapshot(): Boolean = vpnSecurity.getHttpsFilteringEnabledSnapshot()
+    suspend fun setWireguardHttpsCoexistence(enabled: Boolean) = vpnSecurity.setWireguardHttpsCoexistence(enabled)
+    suspend fun getWireguardHttpsCoexistenceSnapshot(): Boolean = vpnSecurity.getWireguardHttpsCoexistenceSnapshot()
     suspend fun setFilterHttp3(enabled: Boolean) = vpnSecurity.setFilterHttp3(enabled)
     suspend fun getFilterHttp3Snapshot(): Boolean = vpnSecurity.getFilterHttp3Snapshot()
     suspend fun setSelectedBrowsers(packages: Set<String>) = vpnSecurity.setSelectedBrowsers(packages)
