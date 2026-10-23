@@ -18,6 +18,9 @@ func TestStreamOutboundDialsListener(t *testing.T) {
 	if err := outbound.Start(); err != nil {
 		t.Fatal(err)
 	}
+	if !outbound.SupportsStreams() {
+		t.Fatal("stream outbound does not advertise stream support")
+	}
 
 	listener, err := outbound.Listen("tcp", "10.64.0.2:0")
 	if err != nil {
