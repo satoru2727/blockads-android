@@ -102,7 +102,7 @@ Android apps -> VpnService TUN -> gVisor stack
 - `SupportsStreams` is true only for the stream adapter. This prevents the legacy packet adapter from being mistaken for a stream-capable outbound.
 - `Engine.startWireGuard(..., streamMode=true)` selects the private stream adapter while the Android TUN continues through the parallel userspace stack/DNS interceptor.
 - `Engine.DialUpstream` dials TCP through that stream adapter before falling back to proxy/direct outbound selection.
-- Local loopback tests verify TCP/UDP stream plumbing, startup state, address parsing, and stream support. Engine tests verify stream mode adapter selection and cleanup.
+- Local loopback tests verify TCP transport, UDP dial construction, startup state, address parsing, and stream support. Engine tests verify stream mode adapter selection and cleanup.
 
 ### Phase A sequence
 
