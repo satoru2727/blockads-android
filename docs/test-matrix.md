@@ -20,7 +20,7 @@
 | Area | Evidence | Expected result | Status |
 |---|---|---|---|
 | WireGuard TCP stream plumbing | `internal/wireguard/stream_test.go` | TCP dials a listener through private netstack | Confirmed |
-| WireGuard UDP stream plumbing | `internal/wireguard/stream_test.go` | UDP dials an echo endpoint through private netstack | Confirmed |
+| WireGuard UDP stream dial | `internal/wireguard/stream_test.go` | UDP returns a connected stream-transport socket | Confirmed |
 | IP-literal guard | stream tests | Hostnames are rejected before start | Confirmed |
 | Stream support discovery | engine lifecycle test | Stream adapter reports `SupportsStreams`; packet adapter does not | Confirmed |
 | MITM fallback semantics | `internal/mitm` tests | `ErrNoOutbound` falls back; real stream errors fail | Confirmed |
