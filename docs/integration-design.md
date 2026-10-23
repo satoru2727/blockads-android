@@ -70,7 +70,7 @@ Failure behavior:
 
 ## Tailscale integration options
 
-Phase B is a design and dependency decision, not a completed integration. No Tailscale code or dependency was added on this branch. Claims below compare the integration surfaces at a design level and mark implementation acceptance separately in `test-matrix.md`.
+Phase B is a design and dependency decision, not a completed integration. No Tailscale code or dependency was added on this branch. The detailed source-backed comparison lives in `docs/tailscale-comparison.md`; the summary below preserves the architectural rationale.
 
 ### Option 1: `tsnet`
 
