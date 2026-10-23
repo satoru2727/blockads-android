@@ -80,8 +80,22 @@ class GoTunnelAdapterTest {
     }
 
     @Test
-    fun `wireguard mode enables MITM for HTTPS coexistence`() {
+    fun `wireguard mode keeps MITM off unless experimental coexistence is enabled`() {
         f.adapter.start(f.tunFd, wgConfigJson = "{\"wg\":1}", httpsFilteringEnabled = true, certDir = "/certs")
+        verify { f.engine.setUseTcpStack(false) }
+        verify(exactly = 0) { f.engine.startStackMitm(any()) }
+        verify { f.engine.start(42L, any(), "{\"wg\":1}") }
+    }
+
+    @Test
+    fun `wireguard mode enables MITM for experimental HTTPS coexistence`() {
+        f.adapter.start(
+            f.tunFd,
+            wgConfigJson = "{\"wg\":1}",
+            httpsFilteringEnabled = true,
+            wireguardHttpsCoexistence = true,
+            certDir = "/certs"
+        )
         verify { f.engine.setUseTcpStack(true) }
         verify { f.engine.startStackMitm("/certs") }
         verify { f.engine.start(42L, any(), "{\"wg\":1}") }

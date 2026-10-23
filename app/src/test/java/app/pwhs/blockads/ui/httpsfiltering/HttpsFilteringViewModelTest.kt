@@ -1,10 +1,13 @@
 package app.pwhs.blockads.ui.httpsfiltering
 
 import app.pwhs.blockads.data.datastore.AppPreferences
+import app.pwhs.blockads.service.ServiceController
 import app.pwhs.blockads.testutil.ShadowGoSeq
 import app.pwhs.blockads.testutil.awaitTrue
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.Runs
+import io.mockk.just
 import io.mockk.unmockkAll
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
@@ -12,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.junit.After
+import org.junit.Before
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -35,6 +39,12 @@ class HttpsFilteringViewModelTest {
         scope.cancel()
         stopKoin()
         unmockkAll()
+    }
+
+    @Before
+    fun setUp() {
+        mockkObject(ServiceController)
+        every { ServiceController.requestRestart(any()) } just Runs
     }
 
     private fun HttpsFilteringViewModel.recordEvents(): MutableList<HttpsFilteringEvent> {
@@ -183,6 +193,19 @@ class HttpsFilteringViewModelTest {
         assertFalse(HttpsFilteringEvent.WireGuardDisabledForHttps in events)
         coVerify(exactly = 0) { f.prefs.setRoutingMode(any()) }
         assertTrue(vm.isProxyRunning.value)
+    }
+
+    @Test
+    fun `toggling experimental coexistence persists and restarts while HTTPS filtering runs`() {
+        val f = HttpsTestFixtures(httpsEnabled = true)
+        val vm = HttpsFilteringViewModel(f.app)
+        vm.awaitLoaded()
+
+        vm.toggleWireguardHttpsCoexistence(true)
+        awaitTrue { vm.wireguardHttpsCoexistence.value }
+
+        coVerify { f.prefs.setWireguardHttpsCoexistence(true) }
+        verify { ServiceController.requestRestart(f.app) }
     }
 
     @Test

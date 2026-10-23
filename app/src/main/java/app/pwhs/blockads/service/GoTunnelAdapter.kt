@@ -243,6 +243,7 @@ class GoTunnelAdapter(
         vpnInterface: android.os.ParcelFileDescriptor, 
         wgConfigJson: String = "",
         httpsFilteringEnabled: Boolean = false,
+        wireguardHttpsCoexistence: Boolean = false,
         selectedBrowsers: Set<String> = emptySet(),
         certDir: String = "",
         filterHttp3: Boolean = false,
@@ -266,7 +267,9 @@ class GoTunnelAdapter(
             Timber.e(e, "Failed to configure proxy node in Go engine")
         }
 
-        val mitmMode = httpsFilteringEnabled && certDir.isNotEmpty()
+        val mitmMode = httpsFilteringEnabled &&
+            certDir.isNotEmpty() &&
+            (wgConfigJson.isEmpty() || wireguardHttpsCoexistence)
         engine.setUseTcpStack(mitmMode)
 
         if (mitmMode) {

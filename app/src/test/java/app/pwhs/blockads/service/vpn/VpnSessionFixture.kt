@@ -75,7 +75,12 @@ class VpnSessionFixture(test: TestScope) {
         }
         override suspend fun configure(config: StartupConfig) { events += "configure" }
         override fun startFilterUpdateWatcher(scope: CoroutineScope) { events += "watcher" }
-        override suspend fun startTunnel(vpnInterface: ParcelFileDescriptor, resolvedWgConfigJson: String, httpsFilteringEnabled: Boolean) {
+        override suspend fun startTunnel(
+            vpnInterface: ParcelFileDescriptor,
+            resolvedWgConfigJson: String,
+            httpsFilteringEnabled: Boolean,
+            wireguardHttpsCoexistence: Boolean
+        ) {
             events += "startTunnel(${tunnels.indexOf(vpnInterface)},$resolvedWgConfigJson)"
         }
         override fun stop() { events += "engineStop" }

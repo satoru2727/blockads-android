@@ -33,6 +33,7 @@ class HttpsTestFixtures(
     val engine: Engine = mockk(relaxed = true)
     val prefs: AppPreferences = mockk(relaxed = true)
     var savedBrowsers: Set<String> = selectedBrowsers
+    var savedWireguardHttpsCoexistence: Boolean = wireguardHttpsCoexistence
 
     init {
         mockkStatic(Tunnel::class)
@@ -42,7 +43,8 @@ class HttpsTestFixtures(
         coEvery { prefs.getHttpsFilteringEnabledSnapshot() } returns httpsEnabled
         coEvery { prefs.getFilterHttp3Snapshot() } returns filterHttp3
         coEvery { prefs.getRoutingModeSnapshot() } returns routingMode
-        coEvery { prefs.getWireguardHttpsCoexistenceSnapshot() } returns wireguardHttpsCoexistence
+        coEvery { prefs.getWireguardHttpsCoexistenceSnapshot() } answers { savedWireguardHttpsCoexistence }
+        coEvery { prefs.setWireguardHttpsCoexistence(any()) } answers { savedWireguardHttpsCoexistence = firstArg() }
         every { prefs.getSelectedBrowsersSnapshot() } answers { savedBrowsers }
         coEvery { prefs.setSelectedBrowsers(any()) } answers { savedBrowsers = firstArg() }
         startKoin { modules(module { single { prefs } }) }

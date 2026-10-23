@@ -166,6 +166,7 @@ class VpnEngineCoordinator(
         vpnInterface: ParcelFileDescriptor,
         resolvedWgConfigJson: String,
         httpsFilteringEnabled: Boolean,
+        wireguardHttpsCoexistence: Boolean,
         certDir: String,
         socketProtector: (Int) -> Boolean
     ) {
@@ -210,6 +211,7 @@ class VpnEngineCoordinator(
             proxyProtocol = proxyProtocol,
             proxyConfigJson = proxyConfigJson,
             httpsFilteringEnabled = httpsFilteringEnabled,
+            wireguardHttpsCoexistence = wireguardHttpsCoexistence,
             selectedBrowsers = selectedBrowsers,
             certDir = certDir,
             filterHttp3 = filterHttp3,

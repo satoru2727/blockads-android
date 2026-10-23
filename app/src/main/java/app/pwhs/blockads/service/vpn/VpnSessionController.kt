@@ -206,7 +206,12 @@ class VpnSessionController(
                 engine.startFilterUpdateWatcher(this)
 
                 vpnInterface?.let { pfd ->
-                    engine.startTunnel(pfd, resolvedWgConfigJson, httpsFilteringEnabled)
+                    engine.startTunnel(
+                        pfd,
+                        resolvedWgConfigJson,
+                        httpsFilteringEnabled,
+                        appPrefs.getWireguardHttpsCoexistenceSnapshot()
+                    )
                 }
 
             } catch (e: CancellationException) {
