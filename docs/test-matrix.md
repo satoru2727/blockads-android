@@ -3,17 +3,30 @@
 ## Environment constraints
 
 - Android SDK is unavailable; APK builds, Gradle tests, Robolectric execution, and on-device verification were not run in this workspace.
-- Toolchain: Go 1.25 via `mise exec go --` in `tunnel/`.
+- Toolchain: Go 1.27.0 via `mise exec go --` in `tunnel/` for the final Phase A/Phase B-documentation verification. The project's mise-selected toolchain changed during the work; preserve the toolchain required by the repository when this branch is reviewed upstream.
 - `internal/dns.TestDoTErrors` and `internal/dns.TestDoQErrors` fail in this environment because names intended to be unresolvable receive wildcard/private DNS results. The same failures are present in the pre-change baseline and are treated as environment-only exclusions; upstream CI remains the authority.
 - No real WireGuard peer or Android device is available.
+- No Tailscale dependency or authenticated tailnet is available; Phase B is source/document comparison only.
 
 ## Automated Go verification
 
 | Check | Command | Result | Notes |
 |---|---|---|---|
-| Build | `go build ./...` | Pass | Run with Go 1.25/mise |
-| Vet | `go vet ./...` | Pass | Run with Go 1.25/mise |
-| Tests | `go test ./...` | Pass except baseline DNS tests | Only `TestDoTErrors` and `TestDoQErrors` fail; both match the documented environment issue |
+| Build | `mise exec go -- go build ./...` | Pass | Go 1.27.0, uncached final run |
+| Vet | `mise exec go -- go vet ./...` | Pass | Go 1.27.0, uncached final run |
+| Tests | `mise exec go -- go test -count=1 ./...` | Pass except two documented environment tests | 16 packages pass after the final documentation commits; `tunnel/internal/dns` fails only `TestDoQErrors` and `TestDoTErrors` |
+
+Final test failures (environment-only):
+
+```text
+--- FAIL: TestDoQErrors (5.00s)
+    doq_test.go:224: unresolvable err = DoQ connection: DoQ dial: timeout: no recent network activity
+--- FAIL: TestDoTErrors (0.00s)
+    transport_test.go:291: unresolvable err = DoT dial: dial tcp 10.77.0.20:853: connect: connection refused
+```
+
+Both intentionally-unresolvable test names are answered by this workspace's wildcard/private DNS path. They match the pre-change baseline, so no code change is inferred from these two failures.
+The final rerun was executed at branch HEAD `a65d197`; the failure text above is from that run.
 
 ## Unit and integration coverage
 
@@ -66,6 +79,8 @@
 | Battery/memory | Browser load benchmark | No unacceptable regression |
 
 ## Phase B Tailscale matrix
+
+Design comparison: `docs/tailscale-comparison.md`.
 
 | Test | Expected | Status |
 |---|---|---|
