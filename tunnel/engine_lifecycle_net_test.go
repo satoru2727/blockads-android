@@ -245,6 +245,9 @@ func TestStartWireGuardConfig(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e, _ := newNetEngine(t)
 			e.SetSplitDNSZones("corp")
+			if name == "valid" {
+				e.SetUseTcpStack(true)
+			}
 			fd, cf, err := testnet.Socketpair()
 			if err != nil {
 				t.Fatal(err)
@@ -258,6 +261,9 @@ func TestStartWireGuardConfig(t *testing.T) {
 				adapter := e.GetRouter().GetAdapter()
 				if adapter == nil || adapter.Name() != "wireguard" {
 					t.Errorf("adapter = %v", adapter)
+				}
+				if !adapter.SupportsStreams() {
+					t.Error("stream mode adapter does not report stream support")
 				}
 				e.Stop()
 				<-done

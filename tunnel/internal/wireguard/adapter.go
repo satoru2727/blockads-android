@@ -192,9 +192,9 @@ func (w *WgOutbound) HandlePacket(packet []byte, length int) {
 	}
 }
 
-// SupportsStreams returns false — WireGuard is a Layer 3 protocol.
+// SupportsStreams reports whether DialContext can terminate streams locally.
 func (w *WgOutbound) SupportsStreams() bool {
-	return false
+	return w.stream != nil
 }
 
 // IsRunning returns whether the adapter is active.
