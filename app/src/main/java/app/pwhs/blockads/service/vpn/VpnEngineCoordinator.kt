@@ -203,6 +203,21 @@ class VpnEngineCoordinator(
         val filterHttp3 = if (httpsFilteringEnabled) true else appPrefs.getFilterHttp3Snapshot()
         val blockDohBypass = appPrefs.getBlockDohBypassSnapshot()
         val blockWebRtc = appPrefs.getBlockWebRtcLeakSnapshot()
+        val tailscale = appPrefs.getTailscaleConfigSnapshot()
+        val tailscaleConfigJson = if (tailscale.enabled) {
+            TailscaleConfigJson.build(
+                TailscaleConfigJson.Input(
+                    enabled = true,
+                    stateDir = TailscaleConfigJson.stateDir(context.filesDir),
+                    hostname = tailscale.hostname,
+                    authKey = tailscale.authKey,
+                    allowedCIDRs = tailscale.allowedCIDRs,
+                    controlURL = tailscale.controlURL
+                )
+            )
+        } else {
+            ""
+        }
 
         goTunnelAdapter.start(
             vpnInterface = vpnInterface,
@@ -217,7 +232,8 @@ class VpnEngineCoordinator(
             filterHttp3 = filterHttp3,
             blockDohBypass = blockDohBypass,
             blockWebRtc = blockWebRtc,
-            socketProtector = socketProtector
+            socketProtector = socketProtector,
+            tailscaleConfigJson = tailscaleConfigJson
         )
     }
 

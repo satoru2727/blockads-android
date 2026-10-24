@@ -9,6 +9,7 @@ import android.content.pm.ResolveInfo
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import app.pwhs.blockads.data.datastore.AppPreferences
+import app.pwhs.blockads.data.datastore.prefs.TailscalePreferences
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -44,6 +45,13 @@ class HttpsTestFixtures(
         coEvery { prefs.getFilterHttp3Snapshot() } returns filterHttp3
         coEvery { prefs.getRoutingModeSnapshot() } returns routingMode
         coEvery { prefs.getWireguardHttpsCoexistenceSnapshot() } answers { savedWireguardHttpsCoexistence }
+        coEvery { prefs.getTailscaleConfigSnapshot() } returns TailscalePreferences.Snapshot(
+            enabled = false,
+            authKey = "",
+            hostname = TailscalePreferences.DEFAULT_HOSTNAME,
+            allowedCIDRs = "",
+            controlURL = ""
+        )
         coEvery { prefs.setWireguardHttpsCoexistence(any()) } answers { savedWireguardHttpsCoexistence = firstArg() }
         every { prefs.getSelectedBrowsersSnapshot() } answers { savedBrowsers }
         coEvery { prefs.setSelectedBrowsers(any()) } answers { savedBrowsers = firstArg() }

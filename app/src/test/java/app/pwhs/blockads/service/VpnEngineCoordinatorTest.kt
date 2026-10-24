@@ -7,6 +7,7 @@ import android.net.Network
 import android.os.ParcelFileDescriptor
 import app.pwhs.blockads.data.dao.FirewallRuleDao
 import app.pwhs.blockads.data.datastore.AppPreferences
+import app.pwhs.blockads.data.datastore.prefs.TailscalePreferences
 import app.pwhs.blockads.data.entities.DnsProtocol
 import app.pwhs.blockads.data.repository.FilterListRepository
 import app.pwhs.blockads.service.vpn.StartupConfig
@@ -62,6 +63,13 @@ class VpnEngineCoordinatorTest {
         coEvery { getTrustedSsidsSnapshot() } returns emptySet()
         coEvery { getActiveProxyTypeSnapshot() } returns AppPreferences.PROXY_TYPE_WIREGUARD
         coEvery { getSsProfileSnapshot() } returns null
+        coEvery { getTailscaleConfigSnapshot() } returns TailscalePreferences.Snapshot(
+            enabled = false,
+            authKey = "",
+            hostname = TailscalePreferences.DEFAULT_HOSTNAME,
+            allowedCIDRs = "",
+            controlURL = ""
+        )
     }
     private val domainCount = MutableStateFlow(100)
     private val filterRepo: FilterListRepository = mockk(relaxed = true) {

@@ -64,8 +64,24 @@ class GoTunnelAdapterTest {
         f.adapter.start(f.tunFd)
         verify { f.engine.setUseTcpStack(false) }
         verify { f.engine.startFull(42L, any()) }
+        verify(exactly = 0) { f.engine.setTailscaleConfig(any()) }
         verify(exactly = 0) { f.engine.start(any(), any(), any()) }
         verify(exactly = 0) { f.engine.startStackMitm(any()) }
+    }
+
+    @Test
+    fun `full-tunnel mode configures Tailscale before starting`() {
+        every { f.engine.setTailscaleConfig(any()) } returns ""
+
+        f.adapter.start(
+            f.tunFd,
+            tailscaleConfigJson = """{"hostname":"lab-phone","authKey":"tskey-test"}"""
+        )
+
+        io.mockk.verifyOrder {
+            f.engine.setTailscaleConfig("""{"hostname":"lab-phone","authKey":"tskey-test"}""")
+            f.engine.startFull(42L, any())
+        }
     }
 
     @Test

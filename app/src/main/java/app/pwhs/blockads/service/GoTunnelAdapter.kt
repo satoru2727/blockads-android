@@ -7,6 +7,7 @@ import android.system.OsConstants
 import app.pwhs.blockads.data.dao.DnsLogDao
 import app.pwhs.blockads.data.entities.DnsLogEntry
 import app.pwhs.blockads.data.repository.FilterListRepository
+import app.pwhs.blockads.service.vpn.TailscaleConfigJson
 import app.pwhs.blockads.utils.AppNameResolver
 import app.pwhs.blockads.utils.BlocklistInfo
 import kotlinx.coroutines.CoroutineScope
@@ -252,7 +253,8 @@ class GoTunnelAdapter(
         socketProtector: ((Int) -> Boolean)? = null,
         ssConfigJson: String = "",
         proxyProtocol: String = "",
-        proxyConfigJson: String = ""
+        proxyConfigJson: String = "",
+        tailscaleConfigJson: String = ""
     ) {
         if (isRunning) return
         isRunning = true
@@ -327,6 +329,15 @@ class GoTunnelAdapter(
             engine.start(fd.toLong(), protector, wgConfigJson)
         } else {
             Timber.d("Starting Go tunnel engine in FULL-TUNNEL mode (fd=$fd, mitm=$mitmMode)")
+            if (tailscaleConfigJson.isNotEmpty()) {
+                val tailscaleError = engine.setTailscaleConfig(tailscaleConfigJson)
+                if (tailscaleError.isNotEmpty()) {
+                    Timber.e(tailscaleError)
+                } else {
+                    val hostname = TailscaleConfigJson.hostname(tailscaleConfigJson)
+                    Timber.d("Tailscale enabled hostname=$hostname")
+                }
+            }
             engine.startFull(fd.toLong(), protector)
         }
     }
