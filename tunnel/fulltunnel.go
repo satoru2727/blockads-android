@@ -141,6 +141,7 @@ func (e *Engine) StartFull(fd int, protector SocketProtector) {
 	certMgr := e.stackCertMgr
 	filter := e.stackMitmFilter
 	uidr := e.uidResolver
+	tailscaleConfig := e.tailscaleConfig
 	done := make(chan struct{})
 	e.fullTunnelDone = done
 
@@ -215,9 +216,31 @@ func (e *Engine) StartFull(fd int, protector SocketProtector) {
 	e.tcpStack = stack
 	e.mu.Unlock()
 
+	var tailscaleAdapter OutboundAdapter
+	if tailscaleConfig != nil {
+		tailscaleAdapter, err = newTailscaleOutbound(tailscaleConfig, protectFn)
+		if err == nil {
+			err = tailscaleAdapter.Start()
+		}
+		if err != nil {
+			tunFile.Close()
+			e.mu.Lock()
+			e.tcpStack = nil
+			e.tunFile = nil
+			e.mu.Unlock()
+			fail("StartFull: Tailscale outbound start failed: %v", err)
+			return
+		}
+		e.router.SetAdapter(tailscaleAdapter)
+		logf("StartFull: Tailscale outbound registered")
+	}
+
 	if err := stack.Start(btun, uint32(defaultTunMTU)); err != nil {
 		btun.halt()
 		tunFile.Close()
+		if tailscaleAdapter != nil {
+			e.router.SetAdapter(nil)
+		}
 		e.mu.Lock()
 		e.tcpStack = nil
 		e.tunFile = nil

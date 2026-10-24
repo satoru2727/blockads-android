@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/netip"
 	"strconv"
 	"strings"
 
@@ -214,6 +215,14 @@ func (e *Engine) DialUpstream(targetIP net.IP, targetPort int) (net.Conn, error)
 		if stream, ok := adapter.(interface {
 			DialContext(ctx context.Context, network, address string) (net.Conn, error)
 		}); ok {
+			if matcher, ok := adapter.(interface {
+				Matches(netip.Addr) bool
+			}); ok {
+				addr, valid := netip.AddrFromSlice(targetIP)
+				if !valid || !matcher.Matches(addr.Unmap()) {
+					return nil, mitm.ErrNoOutbound
+				}
+			}
 			return stream.DialContext(context.Background(), "tcp", net.JoinHostPort(targetIP.String(), strconv.Itoa(targetPort)))
 		}
 	}
