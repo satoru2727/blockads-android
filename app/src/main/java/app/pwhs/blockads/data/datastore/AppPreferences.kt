@@ -8,6 +8,7 @@ import app.pwhs.blockads.data.datastore.prefs.AppearancePreferences
 import app.pwhs.blockads.data.datastore.prefs.DnsPreferences
 import app.pwhs.blockads.data.datastore.prefs.FilterPreferences
 import app.pwhs.blockads.data.datastore.prefs.ShadowsocksPreferences
+import app.pwhs.blockads.data.datastore.prefs.TailscalePreferences
 import app.pwhs.blockads.data.datastore.prefs.VpnSecurityPreferences
 import app.pwhs.blockads.data.datastore.prefs.WireGuardPreferences
 import app.pwhs.blockads.data.entities.DnsProtocol
@@ -33,6 +34,7 @@ class AppPreferences internal constructor(
     val wireguard = WireGuardPreferences(dataStore)
     val vpnSecurity = VpnSecurityPreferences(dataStore)
     val shadowsocks = ShadowsocksPreferences(dataStore)
+    val tailscale = TailscalePreferences(dataStore)
 
     companion object {
         const val ROUTING_MODE_DIRECT = WireGuardPreferences.ROUTING_MODE_DIRECT
@@ -176,6 +178,13 @@ class AppPreferences internal constructor(
     val excludeLan: Flow<Boolean> get() = wireguard.excludeLan
     val allowAppBypass: Flow<Boolean> get() = wireguard.allowAppBypass
 
+    // ── Tailscale Flows ─────────────────────────────────────────────────
+    val tailscaleEnabled: Flow<Boolean> get() = tailscale.enabled
+    val tailscaleAuthKey: Flow<String> get() = tailscale.authKey
+    val tailscaleHostname: Flow<String> get() = tailscale.hostname
+    val tailscaleAllowedCIDRs: Flow<String> get() = tailscale.allowedCIDRs
+    val tailscaleControlURL: Flow<String> get() = tailscale.controlURL
+
     // ── Mutator & Snapshot Delegates ─────────────────────────────────────
     suspend fun setVpnEnabled(enabled: Boolean) {
         vpnSecurity.setVpnEnabled(enabled)
@@ -272,6 +281,13 @@ class AppPreferences internal constructor(
     suspend fun migrateLegacyWgConfigIfNeeded() = wireguard.migrateLegacyWgConfigIfNeeded()
     suspend fun setExcludeLan(enabled: Boolean) = wireguard.setExcludeLan(enabled)
     suspend fun setAllowAppBypass(enabled: Boolean) = wireguard.setAllowAppBypass(enabled)
+
+    suspend fun getTailscaleConfigSnapshot(): TailscalePreferences.Snapshot = tailscale.snapshot()
+    suspend fun setTailscaleEnabled(enabled: Boolean) = tailscale.setEnabled(enabled)
+    suspend fun setTailscaleAuthKey(authKey: String) = tailscale.setAuthKey(authKey)
+    suspend fun setTailscaleHostname(hostname: String) = tailscale.setHostname(hostname)
+    suspend fun setTailscaleAllowedCIDRs(allowedCIDRs: String) = tailscale.setAllowedCIDRs(allowedCIDRs)
+    suspend fun setTailscaleControlURL(controlURL: String) = tailscale.setControlURL(controlURL)
 
     val lastSubscriptionUrl: Flow<String?> get() = shadowsocks.lastSubscriptionUrl
     val lastSubscriptionUpdated: Flow<Long?> get() = shadowsocks.lastSubscriptionUpdated
