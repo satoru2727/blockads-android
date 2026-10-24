@@ -172,6 +172,10 @@ type Engine struct {
 	// (once created) and any future consumer can pull from one place.
 	uidResolver UIDResolver
 
+	// tailscaleConfig is the optional TCP-first tsnet outbound configuration.
+	// It is only consumed by StartFull; the legacy Start path is unchanged.
+	tailscaleConfig *TailscaleConfig
+
 	// protectFn is captured at Start time from the SocketProtector.
 	// Handlers that dial outbound (direct flows, resolver fallbacks)
 	// use it to ensure the socket bypasses the VPN.

@@ -121,6 +121,7 @@ type Engine struct
 	method Engine.SetScriptletsRuntime(js string)
 	method Engine.SetShadowsocksConfig(configJSON string) error
 	method Engine.SetSplitDNSZones(zones string)
+	method Engine.SetTailscaleConfig(jsonConfig string) string
 	method Engine.SetTries(adTriePathsCsv string, secTriePathsCsv string, adBloomPathsCsv string, secBloomPathsCsv string)
 	method Engine.SetUIDResolver(r UIDResolver)
 	method Engine.SetUseTcpStack(enabled bool)
@@ -182,6 +183,7 @@ var ParseResponseType func(s string) internal/packet.ResponseType
 func ParseRulesetSummary(content string) string
 func ParseShadowsocksURI(rawURI string) (string, error)
 var ParseTUNPacket func(packet []byte, length int) *internal/packet.DNSQueryInfo
+func ParseTailscaleConfig(raw string) (*TailscaleConfig, error)
 func ParseTrojanURI(rawURI string) (string, error)
 func ParseVlessURI(rawURI string) (string, error)
 func ParseVmessURI(rawURI string) (string, error)
@@ -302,6 +304,14 @@ type SocketProtector interface
 type Stats struct
 	field Stats.TotalQueries int64
 	field Stats.BlockedQueries int64
+type TailscaleConfig struct
+	field TailscaleConfig.StateDir string
+	field TailscaleConfig.Hostname string
+	field TailscaleConfig.AuthKey string
+	field TailscaleConfig.ControlURL string
+	field TailscaleConfig.AllowedCIDRs []string
+	method TailscaleConfig.EnsureStateDir() error
+	method TailscaleConfig.Matches(addr net/netip.Addr) bool
 type TcpFlowHandler = internal/mitm.TcpFlowHandler
 type TcpIpStack struct
 	method TcpIpStack.HandleTCP(conn github.com/xjasonlyu/tun2socks/v2/core/adapter.TCPConn)
