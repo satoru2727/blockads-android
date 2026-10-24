@@ -84,10 +84,12 @@ Design comparison: `docs/tailscale-comparison.md`.
 
 | Test | Expected | Status |
 |---|---|---|
-| Dependency/build spike | `tsnet` builds behind isolated flag | Not run |
-| Login/auth flow | Official browser-based auth; no token logging | Not run |
-| Private state storage | App-private storage only | Not run |
-| Tailnet TCP dial | One service reachable through tailnet | Not run |
+| Dependency/build spike | `tsnet` builds behind isolated flag | Verified locally: tagless dep graph has 0 tsnet packages; `go build -tags tailscale ./...` passes. Binary 4.2 MB → 18.9 MB (+14.7 MB) for the Go package |
+| Config validation | JSON, absolute state dir, CIDR normalization | Verified by unit tests (`tailscale_config_test.go`) |
+| CIDR split tunnel | Only allowlisted destinations use Tailscale | Verified by unit tests (`Matches` boundaries); engine seam routes through `DialUpstream` |
+| Private state storage | App-private storage only | Verified: `EnsureStateDir` creates `0700` (unit test) |
+| Login/auth flow | Official browser-based auth; no token logging | Not run — no Android device; auth-key path only, real login unverified |
+| Tailnet TCP dial | One service reachable through tailnet | Not run — needs `TS_AUTHKEY` + `TS_TEST_TARGET` (test skips without them) |
 | Subnet Router TCP | Private LAN address reachable | Not run |
 | Subnet Router UDP | Private LAN UDP service reachable | Not run |
 | DNS coexistence | BlockAds DNS remains authoritative | Not run |
