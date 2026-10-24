@@ -33,6 +33,19 @@ This fits Phase A's `DialContext`-style outbound seam. `tsnet` is also the highe
 
 Move down to `wgengine` only if a TCP-first `tsnet` PoC proves that BlockAds needs lower-level route/packet control that `tsnet` cannot expose safely. Do not import sing-box merely to obtain Tailscale: its endpoint is useful reference code, but the dependency duplicates BlockAds' routing/DNS engine and carries a large GPL-v3-or-later and custom-name restrictions surface.
 
+### Phase B PoC result (2026-10-24)
+
+The TCP-first PoC confirms that `tsnet.Server.Dial` fits the existing
+`DialContext` outbound seam and can be isolated behind the `tailscale` build
+tag. The implementation uses `tailscale.com v1.92.5` because `v1.104.2`
+requires a newer gVisor API that is incompatible with the repository's
+`tun2socks/v2 v2.6.0`; the tagless build remains the priority. A Linux,
+unstripped Go test binary measured 27,681,494 bytes without the tag and
+42,295,463 bytes with it, a 14,613,969-byte (+52.8%) increase. The PoC did
+not verify real login, Tailnet TCP, Subnet Router, MagicDNS, UDP forwarding,
+or Android hardware behavior. See `docs/tailscale-poc.md` for commands,
+results, and the next-stage gates.
+
 ## What `tsnet` actually provides
 
 Source-backed facts:
