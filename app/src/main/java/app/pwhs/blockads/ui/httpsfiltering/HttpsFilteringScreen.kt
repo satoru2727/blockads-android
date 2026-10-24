@@ -28,6 +28,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -45,6 +46,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.pwhs.blockads.R
@@ -70,6 +74,10 @@ fun HttpsFilteringScreen(
     val certStatus by viewModel.certStatus.collectAsStateWithLifecycle()
     val filterHttp3 by viewModel.filterHttp3.collectAsStateWithLifecycle()
     val wireguardHttpsCoexistence by viewModel.wireguardHttpsCoexistence.collectAsStateWithLifecycle()
+    val tailscaleEnabled by viewModel.tailscaleEnabled.collectAsStateWithLifecycle()
+    val tailscaleAuthKey by viewModel.tailscaleAuthKey.collectAsStateWithLifecycle()
+    val tailscaleHostname by viewModel.tailscaleHostname.collectAsStateWithLifecycle()
+    val tailscaleAllowedCIDRs by viewModel.tailscaleAllowedCIDRs.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
@@ -323,6 +331,73 @@ fun HttpsFilteringScreen(
                                 onCheckedChange = {
                                     viewModel.toggleWireguardHttpsCoexistence(it)
                                 }
+                            )
+                        }
+                    }
+                }
+
+                // ── Experimental Tailscale ───────────────────────────
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.https_filtering_tailscale_title),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.https_filtering_tailscale_desc),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Switch(
+                                    checked = tailscaleEnabled,
+                                    onCheckedChange = { viewModel.toggleTailscale(it) }
+                                )
+                            }
+                            OutlinedTextField(
+                                value = tailscaleAuthKey,
+                                onValueChange = viewModel::setTailscaleAuthKey,
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text(stringResource(R.string.https_filtering_tailscale_auth_key)) },
+                                singleLine = true,
+                                visualTransformation = PasswordVisualTransformation(),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                            )
+                            OutlinedTextField(
+                                value = tailscaleHostname,
+                                onValueChange = viewModel::setTailscaleHostname,
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text(stringResource(R.string.https_filtering_tailscale_hostname)) },
+                                singleLine = true
+                            )
+                            OutlinedTextField(
+                                value = tailscaleAllowedCIDRs,
+                                onValueChange = viewModel::setTailscaleAllowedCIDRs,
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text(stringResource(R.string.https_filtering_tailscale_allowed_cidrs)) },
+                                supportingText = {
+                                    Text(stringResource(R.string.https_filtering_tailscale_allowed_cidrs_desc))
+                                },
+                                singleLine = true
                             )
                         }
                     }

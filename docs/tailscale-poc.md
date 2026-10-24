@@ -43,6 +43,27 @@ included in returned configuration errors. The PoC uses the tsnet file state
 store below the caller-provided app-private directory; encrypted Android
 state storage is not implemented yet.
 
+## Android wiring
+
+- `TailscalePreferences` stores the experimental settings in the existing
+  DataStore: enabled, auth key, hostname, allowed CIDRs, and optional control
+  URL.
+- The default is disabled, with hostname `blockads-android` and an empty
+  allowlist. The HTTPS Filtering screen exposes only the minimal experimental
+  controls: enable switch, auth key, hostname, and comma-separated allowed
+  CIDRs. There is no Tailscale login UI; authentication is auth-key-only.
+- `TailscaleConfigJson` creates the Go configuration with
+  `context.filesDir/tailscale` as the absolute state directory. The auth key
+  is stored in the app-private DataStore and is never included in the input
+  object's `toString` or Android log messages.
+- `VpnSessionController` reaches `VpnEngineCoordinator`, which builds the JSON
+  snapshot and passes it to `GoTunnelAdapter` only for the full-tunnel start
+  path. An empty JSON preserves the existing startup behavior.
+
+The Android wiring was not compiled in this environment because the Android
+SDK and generated tunnel AAR bindings are unavailable. APK/AAR size,
+device startup, and real Android auth-key login remain unverified.
+
 ## Build and test
 
 Run from `tunnel/`:

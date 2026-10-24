@@ -49,6 +49,18 @@ class HttpsFilteringViewModel(
     val wireguardHttpsCoexistence: StateFlow<Boolean> =
         _wireguardHttpsCoexistence.asStateFlow()
 
+    private val _tailscaleEnabled = MutableStateFlow(false)
+    val tailscaleEnabled: StateFlow<Boolean> = _tailscaleEnabled.asStateFlow()
+
+    private val _tailscaleAuthKey = MutableStateFlow("")
+    val tailscaleAuthKey: StateFlow<String> = _tailscaleAuthKey.asStateFlow()
+
+    private val _tailscaleHostname = MutableStateFlow("blockads-android")
+    val tailscaleHostname: StateFlow<String> = _tailscaleHostname.asStateFlow()
+
+    private val _tailscaleAllowedCIDRs = MutableStateFlow("")
+    val tailscaleAllowedCIDRs: StateFlow<String> = _tailscaleAllowedCIDRs.asStateFlow()
+
     private val _browsers = MutableStateFlow<List<BrowserInfo>>(emptyList())
     val browsers: StateFlow<List<BrowserInfo>> = _browsers.asStateFlow()
 
@@ -116,6 +128,31 @@ class HttpsFilteringViewModel(
                 ServiceController.requestRestart(getApplication())
             }
         }
+    }
+
+    fun toggleTailscale(enabled: Boolean) {
+        viewModelScope.launch {
+            _tailscaleEnabled.value = enabled
+            appPrefs.setTailscaleEnabled(enabled)
+            if (_isEnabled.value) {
+                ServiceController.requestRestart(getApplication())
+            }
+        }
+    }
+
+    fun setTailscaleAuthKey(value: String) {
+        _tailscaleAuthKey.value = value
+        viewModelScope.launch { appPrefs.setTailscaleAuthKey(value) }
+    }
+
+    fun setTailscaleHostname(value: String) {
+        _tailscaleHostname.value = value
+        viewModelScope.launch { appPrefs.setTailscaleHostname(value) }
+    }
+
+    fun setTailscaleAllowedCIDRs(value: String) {
+        _tailscaleAllowedCIDRs.value = value
+        viewModelScope.launch { appPrefs.setTailscaleAllowedCIDRs(value) }
     }
 
     /** Toggle browser selection for MITM interception. */
@@ -362,6 +399,11 @@ class HttpsFilteringViewModel(
             _isEnabled.value = enabled
             _filterHttp3.value = appPrefs.getFilterHttp3Snapshot()
             _wireguardHttpsCoexistence.value = appPrefs.getWireguardHttpsCoexistenceSnapshot()
+            val tailscale = appPrefs.getTailscaleConfigSnapshot()
+            _tailscaleEnabled.value = tailscale.enabled
+            _tailscaleAuthKey.value = tailscale.authKey
+            _tailscaleHostname.value = tailscale.hostname
+            _tailscaleAllowedCIDRs.value = tailscale.allowedCIDRs
 
             // Load installed browsers
             val detectedBrowsers = withContext(Dispatchers.IO) { detectBrowsers() }

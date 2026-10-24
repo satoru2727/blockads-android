@@ -110,6 +110,12 @@
     <string name="https_filtering_http3_desc">Block browser QUIC to force filterable connections for maximum ad filtering. May cause some pages to load partially. Turn off if pages don\'t load fully.</string>
     <string name="https_filtering_wireguard_coexistence_title">Experimental: WireGuard coexistence</string>
     <string name="https_filtering_wireguard_coexistence_desc">Keep WireGuard active while HTTPS filtering is enabled. This feature is still being validated and is off by default.</string>
+    <string name="https_filtering_tailscale_title">Experimental: Tailscale</string>
+    <string name="https_filtering_tailscale_desc">TCP routing through Tailscale tsnet. Experimental and unverified; off by default.</string>
+    <string name="https_filtering_tailscale_auth_key">Auth key</string>
+    <string name="https_filtering_tailscale_hostname">Hostname</string>
+    <string name="https_filtering_tailscale_allowed_cidrs">Allowed CIDRs</string>
+    <string name="https_filtering_tailscale_allowed_cidrs_desc">Comma-separated, for example 10.0.0.0/8, fd00::/8</string>
     <string name="https_filtering_settings_desc">Hide ads visually in browsers</string>
     <string name="https_filtering_step1_title">Step 1: Save Certificate</string>
     <string name="https_filtering_step1_desc">Download the Root CA certificate to your device</string>
