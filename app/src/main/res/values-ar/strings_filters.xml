@@ -201,4 +201,6 @@
     <string name="filter_action_save">حفظ</string>
     <string name="filter_edit_title">تعديل قائمة التصفية</string>
     <string name="filter_edit_url_dialog_title">تعديل رابط التصفية</string>
+    <string name="https_filtering_wireguard_coexistence_title">تجريبي: التعايش مع WireGuard</string>
+    <string name="https_filtering_wireguard_coexistence_desc">يبقى WireGuard نشطًا أثناء تفعيل تصفية HTTPS. هذه الميزة قيد التحقق ومعطّلة افتراضيًا.</string>
 </resources>

@@ -201,4 +201,6 @@
     <string name="filter_action_save">저장</string>
     <string name="filter_edit_title">필터 목록 편집</string>
     <string name="filter_edit_url_dialog_title">필터 URL 편집</string>
+    <string name="https_filtering_wireguard_coexistence_title">실험적: WireGuard 동시 사용</string>
+    <string name="https_filtering_wireguard_coexistence_desc">HTTPS 필터링이 켜져 있는 동안 WireGuard를 유지합니다. 아직 검증 중인 기능이며 기본적으로 꺼져 있습니다.</string>
 </resources>

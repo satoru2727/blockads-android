@@ -203,4 +203,6 @@
     <string name="https_wizard_copy_filename">Sao chép tên file</string>
     <string name="https_wizard_filename_copied">Đã sao chép tên file chứng chỉ vào bộ nhớ tạm</string>
     <string name="https_wizard_verified_success">Chứng chỉ đã được cài đặt và sẵn sàng hoạt động!</string>
+    <string name="https_filtering_wireguard_coexistence_title">Thử nghiệm: dùng chung WireGuard</string>
+    <string name="https_filtering_wireguard_coexistence_desc">Giữ WireGuard hoạt động khi bật lọc HTTPS. Tính năng này vẫn đang được kiểm chứng và mặc định tắt.</string>
 </resources>

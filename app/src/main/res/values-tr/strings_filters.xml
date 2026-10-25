@@ -201,4 +201,6 @@
     <string name="filter_action_save">Kaydet</string>
     <string name="filter_edit_title">Filtre Listesini Düzenle</string>
     <string name="filter_edit_url_dialog_title">Filtre URL sini Düzenle</string>
+    <string name="https_filtering_wireguard_coexistence_title">Deneysel: WireGuard birlikte çalışma</string>
+    <string name="https_filtering_wireguard_coexistence_desc">HTTPS filtreleme açıkken WireGuard etkin kalır. Bu özellik hâlâ doğrulanıyor ve varsayılan olarak kapalı.</string>
 </resources>

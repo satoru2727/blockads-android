@@ -201,4 +201,6 @@
     <string name="filter_action_save">Зберегти</string>
     <string name="filter_edit_title">Змінити список фільтрів</string>
     <string name="filter_edit_url_dialog_title">Змінити URL фільтра</string>
+    <string name="https_filtering_wireguard_coexistence_title">Експериментально: сумісність із WireGuard</string>
+    <string name="https_filtering_wireguard_coexistence_desc">WireGuard залишається активним, поки ввімкнено фільтрування HTTPS. Функція ще перевіряється і вимкнена за замовчуванням.</string>
 </resources>

@@ -201,4 +201,6 @@
     <string name="filter_action_save">Simpan</string>
     <string name="filter_edit_title">Edit Daftar Filter</string>
     <string name="filter_edit_url_dialog_title">Edit URL Filter</string>
+    <string name="https_filtering_wireguard_coexistence_title">Eksperimental: koeksistensi WireGuard</string>
+    <string name="https_filtering_wireguard_coexistence_desc">WireGuard tetap aktif saat pemfilteran HTTPS diaktifkan. Fitur ini masih divalidasi dan nonaktif secara bawaan.</string>
 </resources>

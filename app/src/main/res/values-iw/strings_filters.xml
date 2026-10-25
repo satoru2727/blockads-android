@@ -201,4 +201,6 @@
     <string name="filter_action_save">שמור</string>
     <string name="filter_edit_title">ערוך רשימת סינון</string>
     <string name="filter_edit_url_dialog_title">ערוך כתובת URL של המסנן</string>
+    <string name="https_filtering_wireguard_coexistence_title">ניסיוני: שיתוף פעולה עם WireGuard</string>
+    <string name="https_filtering_wireguard_coexistence_desc">WireGuard נשאר פעיל בזמן שסינון HTTPS מופעל. התכונה עדיין נבדקת וכבויה כברירת מחדל.</string>
 </resources>

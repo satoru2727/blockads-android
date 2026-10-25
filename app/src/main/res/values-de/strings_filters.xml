@@ -201,4 +201,6 @@
     <string name="filter_action_save">Speichern</string>
     <string name="filter_edit_title">Filterliste bearbeiten</string>
     <string name="filter_edit_url_dialog_title">Filter-URL bearbeiten</string>
+    <string name="https_filtering_wireguard_coexistence_title">Experimentell: WireGuard-Koexistenz</string>
+    <string name="https_filtering_wireguard_coexistence_desc">WireGuard bleibt aktiv, während die HTTPS-Filterung läuft. Die Funktion wird noch geprüft und ist standardmäßig aus.</string>
 </resources>

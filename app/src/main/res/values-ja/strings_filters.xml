@@ -201,4 +201,6 @@
     <string name="filter_action_save">保存</string>
     <string name="filter_edit_title">フィルターリストを編集</string>
     <string name="filter_edit_url_dialog_title">フィルターURLを編集</string>
+    <string name="https_filtering_wireguard_coexistence_title">実験的: WireGuard との併用</string>
+    <string name="https_filtering_wireguard_coexistence_desc">HTTPS フィルタリングを有効にしたまま WireGuard を維持します。この機能は検証中のため、既定ではオフです。</string>
 </resources>

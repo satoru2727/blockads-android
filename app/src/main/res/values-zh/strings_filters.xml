@@ -201,4 +201,6 @@
     <string name="filter_action_save">保存</string>
     <string name="filter_edit_title">编辑过滤列表</string>
     <string name="filter_edit_url_dialog_title">编辑过滤规则 URL</string>
+    <string name="https_filtering_wireguard_coexistence_title">实验性：WireGuard 共存</string>
+    <string name="https_filtering_wireguard_coexistence_desc">启用 HTTPS 过滤时保持 WireGuard 运行。该功能仍在验证中，默认关闭。</string>
 </resources>

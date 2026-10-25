@@ -201,4 +201,6 @@
     <string name="filter_action_save">Сақтау</string>
     <string name="filter_edit_title">Сүзгі тізімін өзгерту</string>
     <string name="filter_edit_url_dialog_title">Сүзгінің URL мекенжайын өзгерту</string>
+    <string name="https_filtering_wireguard_coexistence_title">Эксперименттік: WireGuard-пен бірге жұмыс</string>
+    <string name="https_filtering_wireguard_coexistence_desc">HTTPS сүзгілеу қосулы кезде WireGuard белсенді қалады. Бұл мүмкіндік әлі тексерілуде және әдепкіде өшірулі.</string>
 </resources>

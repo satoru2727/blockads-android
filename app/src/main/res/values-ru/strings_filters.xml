@@ -201,4 +201,6 @@
     <string name="filter_action_save">Сохранить</string>
     <string name="filter_edit_title">Изменить список фильтров</string>
     <string name="filter_edit_url_dialog_title">Изменить URL фильтра</string>
+    <string name="https_filtering_wireguard_coexistence_title">Экспериментально: совместимость с WireGuard</string>
+    <string name="https_filtering_wireguard_coexistence_desc">WireGuard остаётся активным при включённой фильтрации HTTPS. Функция ещё проверяется и по умолчанию выключена.</string>
 </resources>

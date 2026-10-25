@@ -201,4 +201,6 @@
     <string name="filter_action_save">Uložit</string>
     <string name="filter_edit_title">Upravit seznam filtrů</string>
     <string name="filter_edit_url_dialog_title">Upravit URL filtru</string>
+    <string name="https_filtering_wireguard_coexistence_title">Experimentální: soužití s WireGuard</string>
+    <string name="https_filtering_wireguard_coexistence_desc">WireGuard zůstává aktivní i při zapnutém filtrování HTTPS. Funkce se stále ověřuje a je ve výchozím stavu vypnutá.</string>
 </resources>
