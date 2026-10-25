@@ -17,6 +17,11 @@ on:
       - auto-update-tunnel
   pull_request:
   workflow_dispatch:
+    inputs:
+      tunnel_tags:
+        description: "Go build tags for the tunnel (default includes tailscale; empty builds without it)"
+        required: false
+        default: "tailscale"
 
 concurrency:
   group: branch-build-${{ github.ref }}
@@ -28,6 +33,11 @@ permissions:
 env:
   GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m"
   GRADLE_USER_HOME: ${{ github.workspace }}/.gradle-home
+  # Manual runs can build an opt-in variant (e.g. the tailscale-tagged tunnel);
+  # branch builds always use the default artifact.
+  # This fork ships Tailscale support in every build; a manual run can pass an
+  # empty tunnel_tags to get a lean artifact for size comparisons.
+  TUNNEL_TAGS: ${{ github.event_name == 'workflow_dispatch' && inputs.tunnel_tags || 'tailscale' }}
 
 jobs:
   go:
@@ -103,21 +113,21 @@ jobs:
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
       - name: Build tunnel.aar from this branch
-        run: gomobile init && ./gradlew -Ptunnel.source=local buildGoTunnel
+        run: gomobile init && ./gradlew -Ptunnel.source=local -Ptunnel.tags="$TUNNEL_TAGS" buildGoTunnel
 
       - name: Unit tests
-        run: ./gradlew -Ptunnel.source=local :app:testFdroidDebugUnitTest
+        run: ./gradlew -Ptunnel.source=local -Ptunnel.tags="$TUNNEL_TAGS" :app:testFdroidDebugUnitTest
 
       - name: Lint
-        run: ./gradlew -Ptunnel.source=local lintFdroidDebug
+        run: ./gradlew -Ptunnel.source=local -Ptunnel.tags="$TUNNEL_TAGS" lintFdroidDebug
 
       - name: Assemble debug APKs
-        run: ./gradlew -Ptunnel.source=local assembleFdroidDebug
+        run: ./gradlew -Ptunnel.source=local -Ptunnel.tags="$TUNNEL_TAGS" assembleFdroidDebug
 
       - name: Upload debug APKs
         uses: actions/upload-artifact@v4
         with:
-          name: blockads-debug-${{ github.run_number }}
+          name: blockads-debug-${{ github.run_number }}${{ inputs.tunnel_tags != '' && format('-{0}', inputs.tunnel_tags) || '' }}
           path: app/build/outputs/apk/**/debug/*.apk
           if-no-files-found: error
           retention-days: 14
