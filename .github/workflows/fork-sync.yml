@@ -1,0 +1,97 @@
+name: Fork sync
+
+# Keeps this fork current with upstream:
+#   1. fast-forwards `main` to upstream/main (never rewrites local commits),
+#   2. merges upstream/main into the long-lived feature branch when that merge
+#      is conflict-free, and
+#   3. opens (or updates) an issue when the feature branch needs manual conflict
+#      resolution, so upstream drift is never silent.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"   # daily, 03:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: fork-sync
+  cancel-in-progress: false
+
+env:
+  UPSTREAM: pass-with-high-score/blockads-android
+  FEATURE_BRANCH: feat/wireguard-https-coexistence
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name "fork-sync[bot]"
+          git config user.email "fork-sync@users.noreply.github.com"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream "https://github.com/${UPSTREAM}.git"
+          git fetch --prune upstream main
+          git fetch --prune origin
+
+      - name: Fast-forward main
+        id: main
+        run: |
+          git checkout -B main origin/main
+          if git merge-base --is-ancestor origin/main upstream/main; then
+            git merge --ff-only upstream/main
+            git push origin main
+            echo "updated=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "main has diverged from upstream; fast-forward skipped"
+            echo "updated=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Merge upstream into the feature branch when clean
+        id: feature
+        run: |
+          if ! git ls-remote --exit-code --heads origin "${FEATURE_BRANCH}" >/dev/null 2>&1; then
+            echo "feature branch missing; nothing to do"
+            echo "state=missing" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git checkout -B "${FEATURE_BRANCH}" "origin/${FEATURE_BRANCH}"
+          if git merge-base --is-ancestor upstream/main "${FEATURE_BRANCH}"; then
+            echo "already up to date"
+            echo "state=current" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          base=$(git merge-base "${FEATURE_BRANCH}" upstream/main)
+          if git merge-tree --write-tree --messages "$base" "${FEATURE_BRANCH}" upstream/main > /tmp/merge.out 2>&1; then
+            git merge --no-edit upstream/main
+            git push origin "${FEATURE_BRANCH}"
+            echo "state=merged" >> "$GITHUB_OUTPUT"
+          else
+            echo "conflicts:"; cat /tmp/merge.out
+            echo "state=conflict" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report upstream drift that needs a human
+        if: steps.feature.outputs.state == 'conflict'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          title="fork-sync: upstream/main conflicts with ${FEATURE_BRANCH}"
+          body=$(printf 'Upstream `%s` can no longer be merged into `%s` automatically.\n\nResolve locally:\n\n```bash\ngit fetch origin\ngit checkout %s\ngit merge upstream/main\n```\n\nMerge attempt output:\n\n```\n%s\n```\n' "${UPSTREAM}" "${FEATURE_BRANCH}" "${FEATURE_BRANCH}" "$(cat /tmp/merge.out)")
+          existing=$(gh issue list --repo "${{ github.repository }}" --state open --search "$title in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --repo "${{ github.repository }}" --body "$body"
+          else
+            gh issue create --repo "${{ github.repository }}" --title "$title" --body "$body"
+          fi
