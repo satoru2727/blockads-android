@@ -98,6 +98,7 @@ class VpnSessionFixture(test: TestScope) {
 
     private val prefs: AppPreferences = mockk {
         coEvery { getHttpsFilteringEnabledSnapshot() } returns false
+        coEvery { getWireguardHttpsCoexistenceSnapshot() } returns false
         coEvery { setVpnEnabled(any()) } answers { vpnEnabledWrites += firstArg<Boolean>() }
         coEvery { setVpnRevokedByAnotherApp(any()) } returns Unit
         every { lastMilestoneBlocked } returns flowOf(0L)
