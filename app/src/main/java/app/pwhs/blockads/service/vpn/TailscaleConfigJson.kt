@@ -1,7 +1,8 @@
 package app.pwhs.blockads.service.vpn
 
-import org.json.JSONArray
-import org.json.JSONObject
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.io.File
 
 object TailscaleConfigJson {
@@ -13,38 +14,48 @@ object TailscaleConfigJson {
         val allowedCIDRs: String,
         val controlURL: String,
     ) {
+        // Never let the auth key leak through logs or failure messages.
         override fun toString(): String =
             "Input(enabled=$enabled, stateDir=$stateDir, hostname=$hostname, " +
                 "allowedCIDRs=$allowedCIDRs, controlURL=$controlURL)"
     }
 
+    @Serializable
+    private data class Payload(
+        val stateDir: String,
+        val hostname: String,
+        val authKey: String,
+        val allowedCIDRs: List<String>,
+        val controlURL: String? = null,
+    )
+
+    private val json = Json {
+        encodeDefaults = true
+        explicitNulls = false
+        ignoreUnknownKeys = true
+    }
+
     fun build(input: Input): String {
         if (!input.enabled) return ""
 
-        val json = JSONObject()
-            .put("stateDir", input.stateDir)
-            .put("hostname", input.hostname)
-            .put("authKey", input.authKey)
-            .put("allowedCIDRs", input.allowedCIDRs.toCIDRArray())
-
-        if (input.controlURL.isNotBlank()) {
-            json.put("controlURL", input.controlURL.trim())
-        }
-        return json.toString()
+        val payload = Payload(
+            stateDir = input.stateDir,
+            hostname = input.hostname,
+            authKey = input.authKey,
+            allowedCIDRs = input.allowedCIDRs.toCIDRList(),
+            controlURL = input.controlURL.trim().takeIf(String::isNotEmpty),
+        )
+        return json.encodeToString(payload)
     }
 
     fun stateDir(filesDir: File): String = File(filesDir, "tailscale").absolutePath
 
-    fun hostname(json: String): String =
-        runCatching { JSONObject(json).optString("hostname", "blockads-android") }
+    fun hostname(configJson: String): String =
+        runCatching { json.decodeFromString<Payload>(configJson).hostname }
             .getOrDefault("blockads-android")
 
-    private fun String.toCIDRArray(): JSONArray {
-        val array = JSONArray()
+    private fun String.toCIDRList(): List<String> =
         split(',')
             .map(String::trim)
             .filter(String::isNotEmpty)
-            .forEach(array::put)
-        return array
-    }
 }

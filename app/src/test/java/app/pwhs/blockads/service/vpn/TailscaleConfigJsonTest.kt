@@ -1,30 +1,52 @@
 package app.pwhs.blockads.service.vpn
 
-import org.json.JSONObject
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
 class TailscaleConfigJsonTest {
 
+    private val json = Json { ignoreUnknownKeys = true }
+
     @Test
     fun `disabled configuration is empty`() {
-        val json = TailscaleConfigJson.build(input(enabled = false))
+        val config = TailscaleConfigJson.build(input(enabled = false))
 
-        assertEquals("", json)
+        assertEquals("", config)
     }
 
     @Test
     fun `build serializes trimmed CIDR list for JSON`() {
-        val json = TailscaleConfigJson.build(
+        val config = TailscaleConfigJson.build(
             input(allowedCIDRs = "10.0.0.0/8,  fd00::/8,,")
         )
-        val parsed = JSONObject(json)
+        val parsed = json.parseToJsonElement(config).jsonObject
+        val cidrs = parsed.getValue("allowedCIDRs").jsonArray.map { it.jsonPrimitive.content }
 
-        assertEquals("10.0.0.0/8", parsed.getJSONArray("allowedCIDRs").getString(0))
-        assertEquals("fd00::/8", parsed.getJSONArray("allowedCIDRs").getString(1))
+        assertEquals(listOf("10.0.0.0/8", "fd00::/8"), cidrs)
+    }
+
+    @Test
+    fun `build omits a blank control URL`() {
+        val parsed = json.parseToJsonElement(TailscaleConfigJson.build(input())).jsonObject
+
+        assertNull(parsed["controlURL"])
+    }
+
+    @Test
+    fun `build keeps a custom control URL`() {
+        val parsed = json
+            .parseToJsonElement(TailscaleConfigJson.build(input(controlURL = " https://headscale.example.org ")))
+            .jsonObject
+
+        assertEquals("https://headscale.example.org", parsed.getValue("controlURL").jsonPrimitive.content)
     }
 
     @Test
@@ -41,6 +63,16 @@ class TailscaleConfigJsonTest {
 
         assertFalse(input.toString().contains("tskey-secret"))
         assertTrue(TailscaleConfigJson.build(input).contains("tskey-secret"))
+    }
+
+    @Test
+    fun `hostname falls back when the payload is unreadable`() {
+        assertEquals("blockads-android", TailscaleConfigJson.hostname("not-json"))
+        assertEquals("blockads-android", TailscaleConfigJson.hostname(""))
+        assertEquals(
+            "vibe-phone",
+            TailscaleConfigJson.hostname(TailscaleConfigJson.build(input(hostname = "vibe-phone")))
+        )
     }
 
     private fun input(
