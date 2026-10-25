@@ -133,7 +133,7 @@ jobs:
           mkdir -p dist
           for apk in app/build/outputs/apk/fdroid/release/*.apk; do
             base=$(basename "$apk" .apk)
-            abi=$(echo "$base" | sed -E 's/.*-(arm64-v8a|armeabi-v7a|x86_64|x86|universal)$/\1/')
+            abi=$(echo "$base" | sed -E 's/^app-[a-z]+-(arm64-v8a|armeabi-v7a|x86_64|x86|universal)-release$/\1/')
             cp "$apk" "dist/blockads-${name}${suffix}-${abi}.apk"
           done
           ls -la dist
