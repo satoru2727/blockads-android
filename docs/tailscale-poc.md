@@ -123,10 +123,15 @@ before merging the dependency into a production build.
 
 ## Building an APK that actually contains Tailscale
 
-The default AAR (and therefore the default APK) is built **without** the
-`tailscale` tag, so `SetTailscaleConfig` reports
-`tailscale support is not enabled; rebuild with -tags tailscale`. To ship the
-experimental outbound, build the tunnel with the tag:
+The upstream-facing default AAR is built **without** the `tailscale` tag, so a
+plain `go build`/`gomobile bind` keeps tsnet out of the artifact and
+`SetTailscaleConfig` reports
+`tailscale support is not enabled; rebuild with -tags tailscale`.
+
+This fork's own releases are different: `release.yml` and `branch-build.yml`
+default to `tunnel_tags=tailscale`, so every published fork APK contains the
+tsnet outbound (measured: 23 MB → 32 MB per ABI, `libgojni.so` 26.6 MB).
+To build by hand:
 
 ```bash
 ./gradlew -Ptunnel.source=local -Ptunnel.tags=tailscale assembleFdroidDebug
