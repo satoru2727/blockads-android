@@ -10,7 +10,6 @@ name: Branch build
 #   - actions/setup-go with module caching scoped to tunnel/go.sum,
 #   - least-privilege permissions, concurrency cancellation, hard timeouts,
 #   - artifacts for the APK and for test/lint reports on failure,
-#   - Gradle dependency-graph submission for Dependabot alerts.
 
 on:
   push:
@@ -133,25 +132,3 @@ jobs:
             app/build/test-results/
             app/build/reports/lint-results-*.html
           retention-days: 7
-
-  dependency-graph:
-    name: Submit dependency graph
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    # Advisory only: a rejected submission (fork settings, API hiccup) must not
-    # fail the build.
-    continue-on-error: true
-    if: github.event_name == 'push'
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
-        with:
-          java-version: |
-            21
-            17
-          distribution: temurin
-
-      - uses: gradle/actions/dependency-submission@v4
