@@ -25,6 +25,31 @@
   </a>
 </div> 
 
+
+---
+
+## Install with Obtainium (fork build)
+
+This fork publishes signed APKs as GitHub Releases, so Obtainium can track them
+and install updates in place.
+
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium%3A%2F%2Fapp%2F%257B%2522id%2522%253A%2522app.pwhs.blockads.fork%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fgithub.com%252Fsatoru2727%252Fblockads-android%2522%252C%2522author%2522%253A%2522satoru2727%2522%252C%2522name%2522%253A%2522BlockAds%2520%2528fork%2529%2522%252C%2522additionalSettings%2522%253A%2522%257B%255C%2522apkFilterRegEx%255C%2522%253A%2520%255C%2522universal%255C%2522%252C%2520%255C%2522invertAPKFilter%255C%2522%253A%2520false%252C%2520%255C%2522autoApkFilterByArch%255C%2522%253A%2520false%252C%2520%255C%2522includePrereleases%255C%2522%253A%2520false%252C%2520%255C%2522fallbackToOlderReleases%255C%2522%253A%2520true%252C%2520%255C%2522about%255C%2522%253A%2520%255C%2522Ad%2520blocker%2520with%2520WireGuard%2520%252B%2520HTTPS%2520coexistence%2520%2528experimental%2529%255C%2522%257D%2522%257D"><img src="assets/obtainium-badge.png" alt="Get it on Obtainium" height="56"></a>
+
+If the button does nothing, Obtainium is not installed yet — install it from
+[obtainium.imranr.dev](https://obtainium.imranr.dev), then tap the badge again.
+Manual setup: Obtainium → *Add App* → paste
+`https://github.com/satoru2727/blockads-android` → keep the default
+*Latest release* source and pick the `blockads-*-universal.apk` asset.
+
+Fork-only notes:
+
+* Signature differs from the F-Droid / upstream build — uninstall those first,
+  then install once here; later fork releases update in place.
+* WireGuard + HTTPS filtering coexistence stays **off by default**
+  (Settings → HTTPS filtering → Experimental).
+* A `-tailscale` APK variant exists for the experimental tsnet outbound; it is
+  a separate asset and is not selected by the badge configuration above.
+
 ---  
 
 ## Screenshots
