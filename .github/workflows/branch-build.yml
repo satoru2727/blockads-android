@@ -1,0 +1,157 @@
+name: Branch build
+
+# Builds and tests every branch in this fork (not just main), so a feature
+# branch always produces an installable APK plus a pass/fail signal before a
+# pull request is opened upstream.
+#
+# Follows the current GitHub Android/Go recommendations:
+#   - gradle/actions/setup-gradle (wrapper validation + dependency cache),
+#   - actions/setup-java with the toolchain the build actually needs,
+#   - actions/setup-go with module caching scoped to tunnel/go.sum,
+#   - least-privilege permissions, concurrency cancellation, hard timeouts,
+#   - artifacts for the APK and for test/lint reports on failure,
+#   - Gradle dependency-graph submission for Dependabot alerts.
+
+on:
+  push:
+    branches-ignore:
+      - auto-update-tunnel
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: branch-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m"
+  GRADLE_USER_HOME: ${{ github.workspace }}/.gradle-home
+
+jobs:
+  go:
+    name: Go vet & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: tunnel
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tunnel/go.mod
+          cache-dependency-path: tunnel/go.sum
+
+      - name: Vet
+        run: go vet ./...
+
+      # Tailscale lives behind a build tag; keep it compiling even though the
+      # default artifact must not contain it.
+      - name: Vet (tailscale tag)
+        run: go vet -tags tailscale ./...
+
+      - name: Test
+        run: go test -short -cover ./...
+
+      - name: Test (tailscale tag)
+        run: go test -short -tags tailscale ./...
+
+  android:
+    name: Build, test & lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: go
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          # 21 runs the unit-test toolchain (Robolectric SDK 36); 17 (listed
+          # last) stays the default for the build itself, matching ci.yml.
+          java-version: |
+            21
+            17
+          distribution: temurin
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      # The runner image already ships the SDK, so only the pinned packages used
+      # by this build are installed (and licences accepted non-interactively).
+      - name: Install SDK packages
+        run: |
+          sdk="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          sdkm="$sdk/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$sdkm" --licenses > /dev/null || true
+          "$sdkm" --install "platforms;android-36" "build-tools;36.0.0" "ndk;27.2.12479018"
+          echo "ANDROID_NDK_HOME=$sdk/ndk/27.2.12479018" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tunnel/go.mod
+          cache-dependency-path: tunnel/go.sum
+
+      - name: Install gomobile
+        run: |
+          go install github.com/sagernet/gomobile/cmd/gomobile@v0.1.12
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Build tunnel.aar from this branch
+        run: gomobile init && ./gradlew -Ptunnel.source=local buildGoTunnel
+
+      - name: Unit tests
+        run: ./gradlew -Ptunnel.source=local :app:testFdroidDebugUnitTest
+
+      - name: Lint
+        run: ./gradlew -Ptunnel.source=local lintFdroidDebug
+
+      - name: Assemble debug APKs
+        run: ./gradlew -Ptunnel.source=local assembleFdroidDebug
+
+      - name: Upload debug APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: blockads-debug-${{ github.run_number }}
+          path: app/build/outputs/apk/**/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ github.run_number }}
+          path: |
+            app/build/reports/tests/
+            app/build/test-results/
+            app/build/reports/lint-results-*.html
+          retention-days: 7
+
+  dependency-graph:
+    name: Submit dependency graph
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Advisory only: a rejected submission (fork settings, API hiccup) must not
+    # fail the build.
+    continue-on-error: true
+    if: github.event_name == 'push'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: |
+            21
+            17
+          distribution: temurin
+
+      - uses: gradle/actions/dependency-submission@v4

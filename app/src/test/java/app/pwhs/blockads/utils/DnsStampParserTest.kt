@@ -6,7 +6,14 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+// The parser decodes base64 through android.util.Base64 below API 26, which a
+// plain JVM unit test cannot load; Robolectric provides the real framework.
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [36])
 class DnsStampParserTest {
 
     @Test
