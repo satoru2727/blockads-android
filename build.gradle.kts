@@ -21,12 +21,19 @@ plugins {
 
 val tunnelAarOutput: Provider<RegularFile> = layout.buildDirectory.file("tunnel/tunnel.aar")
 
+// Optional Go build tags for the tunnel, e.g. -Ptunnel.tags=tailscale. The
+// default (empty) build must stay free of opt-in engines so the shipped AAR
+// keeps its size and licence surface.
+val tunnelTags: String =
+    providers.gradleProperty("tunnel.tags").map { it.trim() }.getOrElse("")
+
 tasks.register<Exec>("buildGoTunnel") {
     description = "Builds tunnel.aar from tunnel/ with gomobile. Requires Go and the Android NDK."
     group = "build"
 
     val tunnelDir = layout.projectDirectory.dir("tunnel")
     val aar = tunnelAarOutput.get().asFile
+    val tagsFlag = if (tunnelTags.isEmpty()) "" else " -tags=$tunnelTags"
 
     // Only rebuild when the tunnel source changes (or the aar is missing).
     inputs.dir(tunnelDir).withPropertyName("tunnelSource")
@@ -43,12 +50,13 @@ tasks.register<Exec>("buildGoTunnel") {
         "mkdir -p \"\$1\" && " +
             "export GOFLAGS=\"-buildvcs=false\" && " +
             "export PATH=\"\$PATH:\$GOPATH/bin:\$HOME/go/bin:/usr/local/go/bin\" && " +
-            "gomobile bind -target=android -androidapi 24 -trimpath " +
+            "gomobile bind -target=android -androidapi 24 -trimpath \"\$3\" " +
             "-ldflags=\"-s -w -buildid= -extldflags=-Wl,-z,max-page-size=16384\" " +
             "-o \"\$2\" github.com/nqmgaming/blockads-tunnel",
         "buildGoTunnel",
         aar.parentFile.absolutePath,
-        aar.absolutePath
+        aar.absolutePath,
+        tagsFlag
     )
 }
 

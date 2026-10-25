@@ -120,3 +120,29 @@ before merging the dependency into a production build.
 4. Design connected-UDP mapping, idle timeout, IPv6, MTU, and leak tests before
    claiming broader Tailscale forwarding.
 5. Re-measure AAR/APK size and re-evaluate the pinned Tailscale/gVisor versions.
+
+## Building an APK that actually contains Tailscale
+
+The default AAR (and therefore the default APK) is built **without** the
+`tailscale` tag, so `SetTailscaleConfig` reports
+`tailscale support is not enabled; rebuild with -tags tailscale`. To ship the
+experimental outbound, build the tunnel with the tag:
+
+```bash
+./gradlew -Ptunnel.source=local -Ptunnel.tags=tailscale assembleFdroidDebug
+```
+
+The same switch is exposed on the fork's `Branch build` workflow
+(`workflow_dispatch` → `tunnel_tags: tailscale`), which uploads
+`blockads-debug-<run>-tailscale`. CI lints and unit-tests the tagged build too.
+
+Measured on this branch (Android/arm64 only, `-ldflags="-s -w"`):
+
+| Artifact | Size |
+|---|---|
+| `tunnel.aar` (default) | 6.6 MB |
+| `tunnel.aar` (`-tags tailscale`) | 10.0 MB |
+
+The Android build with the tag is verified to compile; a real Tailnet login,
+Subnet Router reachability and MagicDNS remain unverified (no credentials or
+device in the authoring environment).
