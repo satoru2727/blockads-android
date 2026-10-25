@@ -128,8 +128,9 @@ jobs:
       - name: Collect artifacts
         run: |
           name="${{ steps.v.outputs.name }}"
+          # Tailscale is compiled into every fork release, so the tag name is
+          # not worth a file-name suffix; keep asset names stable for Obtainium.
           suffix=""
-          [ -n "${{ steps.v.outputs.tags }}" ] && suffix="-${{ steps.v.outputs.tags }}"
           mkdir -p dist
           for apk in app/build/outputs/apk/fdroid/release/*.apk; do
             base=$(basename "$apk" .apk)
