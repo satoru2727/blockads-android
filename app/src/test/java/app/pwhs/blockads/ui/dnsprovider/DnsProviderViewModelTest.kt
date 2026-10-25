@@ -30,7 +30,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+// Custom DNS stamps are parsed with android.util.Base64 below API 26, so the
+// test needs the real framework rather than the mockable jar.
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [36])
 class DnsProviderViewModelTest {
 
     @get:Rule
