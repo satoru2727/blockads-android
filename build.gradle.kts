@@ -50,7 +50,7 @@ tasks.register<Exec>("buildGoTunnel") {
         "mkdir -p \"\$1\" && " +
             "export GOFLAGS=\"-buildvcs=false\" && " +
             "export PATH=\"\$PATH:\$GOPATH/bin:\$HOME/go/bin:/usr/local/go/bin\" && " +
-            "gomobile bind -target=android -androidapi 24 -trimpath \"\$3\" " +
+            "gomobile bind -target=android -androidapi 24 -trimpath \${3:+-tags=\$3} " +
             "-ldflags=\"-s -w -buildid= -extldflags=-Wl,-z,max-page-size=16384\" " +
             "-o \"\$2\" github.com/nqmgaming/blockads-tunnel",
         "buildGoTunnel",
