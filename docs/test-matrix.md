@@ -96,3 +96,24 @@ Design comparison: `docs/tailscale-comparison.md`.
 | MagicDNS/Split DNS | No loop or leak | Not run |
 | HTTPS + Tailscale | MITM policy unchanged | Not run |
 | Logout/expiry/roam | Safe stop/reconnect | Not run |
+
+## Android build verification (2026-10-25)
+
+Local verification on an Ubuntu VM (JDK 21, Android SDK 36, NDK r27c, Go 1.25, `-Ptunnel.source=prebuilt` with a locally rebuilt `tunnel.aar`):
+
+| Check | Command | Result |
+|---|---|---|
+| Kotlin compile | `:app:compileFdroidDebugKotlin` | Pass (found and fixed 1 real error: wrong `KeyboardOptions` import) |
+| Unit tests | `:app:testFdroidDebugUnitTest` | 865 tests, 5 failures, 68 skipped — all 5 failures are pre-existing/environmental (see below) |
+| APK packaging | `:app:assembleFdroidDebug` | Pass — `app-fdroid-universal-debug.apk` (49 MB) |
+| Go tests (tagless) | `go test ./...` | Pass except `TestDoTErrors`/`TestDoQErrors` (lab DNS wildcard) |
+| Go tests (tagged) | `go test -tags tailscale ./...` | Same result; Tailscale unit tests pass, real-tailnet test skips |
+
+Known pre-existing failures in this environment (not caused by these changes, they fail without any local diff):
+
+| Test | Cause |
+|---|---|
+| `DnsStampParserTest` (4 cases) | Plain JVM test calls `android.util.Base64` because `Build.VERSION.SDK_INT == 0` in the mockable jar |
+| `DnsProviderViewModelTest` (1 case) | Same stamp-parsing dependency |
+
+Budget note for builders: Gradle (`-Xmx900m`), Kotlin (`-Xmx700m`), and the test JVM (`maxHeapSize = 768m`) fit a 4 GB machine only when `/tmp` is not a nearly full tmpfs; a 4 GB swap file avoids host-level OOM kills.
