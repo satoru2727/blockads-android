@@ -116,6 +116,9 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
         unitTests.all {
+            // Cap the forked test JVM so low-memory dev VMs don't OOM the host.
+            it.maxHeapSize = "768m"
+            it.maxParallelForks = 1
             // Robolectric's SDK 36 runtime pokes FileDescriptor internals.
             it.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
             // Robolectric's SDK 36 runtime needs Java 21; the build itself stays on the CI JDK.
