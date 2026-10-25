@@ -47,8 +47,10 @@ Fork-only notes:
   then install once here; later fork releases update in place.
 * WireGuard + HTTPS filtering coexistence stays **off by default**
   (Settings → HTTPS filtering → Experimental).
-* A `-tailscale` APK variant exists for the experimental tsnet outbound; it is
-  a separate asset and is not selected by the badge configuration above.
+* Every release here is built with the `tailscale` Go tag, so the experimental
+  Tailscale (tsnet) outbound is included and can be enabled in
+  Settings → HTTPS filtering → Experimental. It still needs a Tailscale auth key
+  and is unverified on-device.
 
 ---  
 

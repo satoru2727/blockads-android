@@ -21,9 +21,9 @@ on:
         description: "versionCode (must increase every release)"
         required: true
       tunnel_tags:
-        description: "Go build tags for the tunnel (empty = default, tailscale = include tsnet)"
+        description: "Go build tags for the tunnel (tailscale = include tsnet, empty = lean build without Tailscale)"
         required: false
-        default: ""
+        default: "tailscale"
 
 permissions:
   contents: write
@@ -57,7 +57,7 @@ jobs:
           else
             name="${GITHUB_REF_NAME#v}"
             code=$(git rev-list --count HEAD)
-            tags=""
+            tags="tailscale"
             echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
           echo "name=${name}" >> "$GITHUB_OUTPUT"
@@ -148,8 +148,8 @@ jobs:
 
           * WireGuard + HTTPS filtering coexistence is available behind
             Settings → HTTPS filtering → Experimental (off by default).
-          * Asset suffix \`-tailscale\` means the build includes the
-            experimental tsnet outbound.
+          * Every asset in this release includes the experimental tsnet
+            outbound (Tailscale). WireGuard + HTTPS coexistence is still opt-in.
           * Install with Obtainium: add this repository as a GitHub Releases
             source and filter assets on \`*.apk\`."
           if gh release view "$tag" >/dev/null 2>&1; then
