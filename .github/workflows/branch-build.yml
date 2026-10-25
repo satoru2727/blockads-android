@@ -83,11 +83,15 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
+      # The runner image already ships the SDK, so only the pinned packages used
+      # by this build are installed (and licences accepted non-interactively).
       - name: Install SDK packages
-        run: sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "ndk;27.2.12479018"
+        run: |
+          sdk="${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}"
+          sdkm="$sdk/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$sdkm" --licenses > /dev/null || true
+          "$sdkm" --install "platforms;android-36" "build-tools;36.0.0" "ndk;27.2.12479018"
+          echo "ANDROID_NDK_HOME=$sdk/ndk/27.2.12479018" >> "$GITHUB_ENV"
 
       - uses: actions/setup-go@v5
         with:
@@ -101,8 +105,6 @@ jobs:
 
       - name: Build tunnel.aar from this branch
         run: gomobile init && ./gradlew -Ptunnel.source=local buildGoTunnel
-        env:
-          ANDROID_NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.2.12479018
 
       - name: Unit tests
         run: ./gradlew -Ptunnel.source=local :app:testFdroidDebugUnitTest
@@ -136,6 +138,9 @@ jobs:
     name: Submit dependency graph
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Advisory only: a rejected submission (fork settings, API hiccup) must not
+    # fail the build.
+    continue-on-error: true
     if: github.event_name == 'push'
     permissions:
       contents: write
